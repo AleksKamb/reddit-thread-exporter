@@ -1,0 +1,27 @@
+{
+  "name": "reddit-thread-exporter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chrome extension that exports Reddit threads and comments to Markdown, CSV and JSON.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Alexander Kamburudis",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AleksKamb/reddit-thread-exporter.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "lint": "eslint .",
+    "check": "npm run lint && npm test && node scripts/check-manifest.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0"
+  }
+}

@@ -37,6 +37,8 @@ import { findMoreStubs, getPostData } from './thread-model.js';
  * @property {string} sort              Comment sort order passed to Reddit.
  * @property {boolean} expandMore       Also load replies hidden behind "load more replies".
  * @property {number} [maxMoreRequests] Cap on extra requests per thread when `expandMore` is on.
+ * @property {number} [batchSize]         Take a longer break after this many threads. 0 turns batches off.
+ * @property {number} [batchPauseSeconds] Length of that break.
  */
 
 /**
@@ -97,6 +99,8 @@ export class ExportRunner extends EventTarget {
     this.request = request;
     this.settings = {
       maxMoreRequests: 10,
+      batchSize: 0,
+      batchPauseSeconds: 0,
       ...settings,
       delaySeconds: Math.max(MIN_DELAY_S, Number(settings.delaySeconds) || MIN_DELAY_S),
     };
@@ -124,6 +128,10 @@ export class ExportRunner extends EventTarget {
     const summary = { done: 0, failed: 0, stopped: false };
 
     for (const [index, job] of jobs.entries()) {
+      if (index > 0 && this.#isBatchBoundary(index)) {
+        this.#log('info', `Finished a batch of ${this.settings.batchSize}. Taking a ${this.settings.batchPauseSeconds} s break.`);
+        await this.#wait(this.settings.batchPauseSeconds, 'batch');
+      }
       await this.#waitWhilePaused();
       if (this.#abort.signal.aborted) break;
 
@@ -168,6 +176,16 @@ export class ExportRunner extends EventTarget {
   }
 
   /* ---------------------------------------------------------------------- */
+
+  /**
+   * Whether a batch break is due before the job at `index`.
+   *
+   * @param {number} index
+   */
+  #isBatchBoundary(index) {
+    const { batchSize, batchPauseSeconds } = this.settings;
+    return batchSize > 0 && batchPauseSeconds > 0 && index % batchSize === 0;
+  }
 
   /**
    * @param {QueueJob} job
@@ -290,7 +308,7 @@ export class ExportRunner extends EventTarget {
 
   /**
    * @param {number} seconds
-   * @param {'delay' | 'rate-limit' | 'retry'} reason
+   * @param {'delay' | 'rate-limit' | 'retry' | 'batch'} reason
    */
   async #wait(seconds, reason) {
     const ms = Math.round(seconds * 1000);

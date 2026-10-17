@@ -52,6 +52,21 @@ describe('ExportRunner', () => {
     assert.equal(runner.state, 'finished');
   });
 
+  it('takes a break between batches', async () => {
+    const { runner, waits, events } = createRunner(() => ok(sampleThread()), { batchSize: 2, batchPauseSeconds: 30 });
+    const ids = ['aaa111', 'bbb222', 'ccc333', 'ddd444', 'eee555'];
+    await runner.run(ids.map((id) => job(`https://redd.it/${id}`)));
+
+    assert.equal(waits.filter((ms) => ms === 30_000).length, 2);
+    assert.equal(events.filter((e) => e.type === 'wait' && e.reason === 'batch').length, 2);
+  });
+
+  it('skips batch breaks when batches are off', async () => {
+    const { runner, events } = createRunner(() => ok(sampleThread()), { batchSize: 0, batchPauseSeconds: 30 });
+    await runner.run(['aaa111', 'bbb222', 'ccc333'].map((id) => job(`https://redd.it/${id}`)));
+    assert.equal(events.filter((e) => e.type === 'wait' && e.reason === 'batch').length, 0);
+  });
+
   it('waits out a rate limit and retries', async () => {
     const { runner, waits, events } = createRunner((_, n) => (n === 1 ? { status: 429, retryAfter: '42' } : ok(sampleThread())));
     const summary = await runner.run([job('https://redd.it/aaa111')]);

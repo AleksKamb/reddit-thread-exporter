@@ -7,7 +7,7 @@
 import { BridgeError } from './protocol.js';
 
 const CONNECT_STEPS =
-  'Ask the user to open Chrome with Thread Exporter for Reddit enabled, open the exporter, find Agent access and switch on "Allow agents". ' +
+  'Ask the user to open Chrome with Thread Exporter for Reddit enabled, click the Thread Exporter toolbar button and switch the "Agents off" pill to "Agents on" (or use Allow agents in the Agent access card of the exporter). ' +
   'Then call get_status to check the connection and try again.';
 
 /** What the agent should do next, by error code. */

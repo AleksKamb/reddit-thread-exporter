@@ -26,8 +26,10 @@ with the same pauses as a manual export. No page is clicked or changed.
    For other clients, add an MCP server with the command `node` and the argument
    `/absolute/path/to/reddit-thread-exporter/mcp/server.js`.
 
-3. **Allow agents in the extension.** Open the exporter, find **Agent access** and switch on
-   **Allow agents**. The card shows when an agent connects.
+3. **Allow agents in the extension.** Click the extension's toolbar button and click the
+   **Agents off** pill next to the name, so it says **Agents on**. It turns green (**Connected**) once
+   an agent with the server is running. The same switch, plus the limits, is in the exporter's
+   **Agent access** card.
 
 Chrome must be open with the extension enabled. The server only listens on your own computer
 (`127.0.0.1`), so agents running in the cloud can't reach it.

@@ -15,7 +15,10 @@
         <span class="pop-name">Thread Exporter</span>
         <span class="pop-sub">for Reddit</span>
       </div>
-      <span class="badge" id="agent-badge" hidden title="Agent access (MCP)"></span>
+      <button type="button" class="agent-pill" id="agent-toggle" aria-pressed="false" title="Let AI agents like Claude Code use Thread Exporter through MCP. Limits are under Agent access in the overview.">
+        <span class="agent-pill-dot" aria-hidden="true"></span>
+        <span id="agent-toggle-label">Agents off</span>
+      </button>
       <button type="button" class="icon-btn icon-btn-sm" id="open-help" aria-label="Help: how Thread Exporter works">
         <svg class="icon" aria-hidden="true"><use href="../shared/icons.svg#i-help" /></svg>
       </button>

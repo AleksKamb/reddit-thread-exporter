@@ -278,7 +278,7 @@ describe('tools', () => {
       const result = await handlersFor(bridge).get_status({});
       assert.equal(result.isError, undefined);
       assert.match(result.content[0].text, /is not connected/);
-      assert.match(result.content[0].text, /switch on "Allow agents"/);
+      assert.match(result.content[0].text, /"Agents off" pill to "Agents on"/);
       assert.deepEqual(bridge.calls, []);
     });
 
@@ -319,7 +319,7 @@ describe('tools', () => {
       ['DAILY_LIMIT', /do not retry today/],
       ['BUSY', /Wait a minute or two and retry/],
       ['DENIED', /declined .*Do not retry/],
-      ['EXTENSION_NOT_CONNECTED', /switch on "Allow agents"/],
+      ['EXTENSION_NOT_CONNECTED', /"Agents off" pill to "Agents on"/],
       ['EXTENSION_DISCONNECTED', /Call get_status/],
       ['TOO_MANY_THREADS', /smaller batches/],
       ['TIMEOUT', /fewer threads/],

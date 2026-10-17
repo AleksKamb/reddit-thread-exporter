@@ -137,7 +137,7 @@ cd mcp && npm install
 claude mcp add thread-exporter -- node "$(pwd)/server.js"
 ```
 
-Then open the exporter, find **Agent access** and switch on **Allow agents**. Agents get these tools:
+Then click the extension's toolbar button and switch the **Agents off** pill to **Agents on** (the limits live in the exporter's **Agent access** card). Agents get these tools:
 
 | Tool | What it does |
 | --- | --- |

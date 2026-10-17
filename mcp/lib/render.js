@@ -183,8 +183,8 @@ export function renderStatus({ version, busy, usage, limits, queue }, bridge) {
 export function renderNotConnected(bridge) {
   return [
     'The Thread Exporter for Reddit extension is not connected, so threads cannot be exported right now.',
-    'To connect it, ask the user to open Chrome with the extension enabled, open the exporter, find Agent access and switch on "Allow agents". ' +
-      'The card shows when an agent is connected. Then call get_status again.',
+    'To connect it, ask the user to open Chrome with the extension enabled, click the Thread Exporter toolbar button and switch the "Agents off" pill to "Agents on" (or use Allow agents in the Agent access card of the exporter). ' +
+      'The pill turns green when an agent is connected. Then call get_status again.',
     renderBridge(bridge),
   ].join('\n');
 }

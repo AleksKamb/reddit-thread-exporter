@@ -145,6 +145,9 @@ function bindEvents() {
   $('open-overview').addEventListener('click', () => openAndClose());
   $('open-app').addEventListener('click', () => openAndClose());
   $('open-help').addEventListener('click', () => openAndClose({ help: true }));
+  $('agent-toggle').addEventListener('click', () =>
+    updateSettings({ agents: { ...state.settings.agents, enabled: !state.settings.agents.enabled } }),
+  );
   // A file picker can't be opened from the popup reliably: the popup closes as soon as
   // the picker takes focus, and the file is lost. The overview page handles uploads.
   $('open-upload').addEventListener('click', () => openAndClose({ upload: true }));
@@ -307,16 +310,18 @@ function describeExportHint({ running, agentRunning, formatsChosen, pending, don
   return '';
 }
 
-/** Small badge next to the name: is agent access on, connected or busy? */
+/** The one-click agent switch next to the name, showing off, on, connected or working. */
 function renderAgentBadge() {
-  const badge = /** @type {HTMLElement} */ (document.getElementById('agent-badge'));
-  const enabled = state.settings.agents?.enabled;
-  badge.hidden = !enabled;
-  if (!enabled) return;
-  const busy = state.agentRun.state !== 'idle';
-  const connected = state.agentConnection.state === 'connected';
-  badge.textContent = busy ? 'AI exporting' : connected ? 'AI connected' : 'AI waiting';
-  badge.dataset.tone = busy ? 'accent' : connected ? 'success' : '';
+  const toggle = /** @type {HTMLElement} */ (document.getElementById('agent-toggle'));
+  const label = /** @type {HTMLElement} */ (document.getElementById('agent-toggle-label'));
+  const enabled = Boolean(state.settings.agents?.enabled);
+  const busy = enabled && state.agentRun.state !== 'idle';
+  const connected = enabled && state.agentConnection.state === 'connected';
+
+  toggle.setAttribute('aria-pressed', String(enabled));
+  toggle.dataset.state = busy ? 'busy' : connected ? 'connected' : enabled ? 'on' : 'off';
+  label.textContent = busy ? 'AI working' : connected ? 'Connected' : enabled ? 'Agents on' : 'Agents off';
+  toggle.setAttribute('aria-label', `Agent access: ${label.textContent}. Click to turn ${enabled ? 'off' : 'on'}.`);
 }
 
 /**

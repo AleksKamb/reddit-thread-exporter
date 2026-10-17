@@ -4,6 +4,12 @@ All notable changes to this project are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-10-17
+
+### Added
+
+- **One-click agent switch in the popup.** The pill next to the name turns agent access on and off and shows its state: off, on (waiting for the MCP server), connected, or working.
+
 ## [1.3.0] - 2026-10-17
 
 ### Added

@@ -1,0 +1,33 @@
+name: Bug report
+description: Something doesn't work as described.
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Activity log
+      description: Open "Activity log" under the Export panel and paste the lines around the problem. Remove anything you don't want to share.
+      render: text
+  - type: input
+    id: link
+    attributes:
+      label: A thread link that fails (optional)
+  - type: input
+    id: chrome
+    attributes:
+      label: Chrome version
+      description: From chrome://version
+      placeholder: "155.0.8059.80"
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Shown in the footer of the exporter page.
+      placeholder: "1.0.0"

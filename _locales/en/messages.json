@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "Thread Exporter for Reddit",
+    "description": "Extension name shown in Chrome and the Web Store."
+  },
+  "extDescription": {
+    "message": "Export Reddit threads and comments to Markdown, CSV or JSON. Paste links or upload a CSV, and the files download when it's done.",
+    "description": "Short description, max 132 characters."
+  },
+  "actionTitle": {
+    "message": "Open Thread Exporter for Reddit",
+    "description": "Tooltip of the toolbar button."
+  }
+}

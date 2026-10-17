@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Thread Exporter for Reddit</title>
+    <link rel="icon" href="../../icons/icon-32.png" />
+    <link rel="stylesheet" href="app.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <!-- Icon sprite. Paths are 24×24, 2px stroke. -->
+    <svg xmlns="http://www.w3.org/2000/svg" hidden>
+      <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></symbol>
+      <symbol id="i-tabs" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18" /><path d="M9 4v5" /></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z" /></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect fill="currentColor" x="6" y="4" width="4" height="16" rx="1" /><rect fill="currentColor" x="14" y="4" width="4" height="16" rx="1" /></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect fill="currentColor" x="5" y="5" width="14" height="14" rx="2" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></symbol>
+      <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></symbol>
+      <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></symbol>
+      <symbol id="i-loader" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.2-8.6" /></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6" /><path d="M10 14L21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" /></symbol>
+      <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z" /></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3.1-.4 6.4-1.5 6.4-6.9A5.4 5.4 0 0 0 20 4.8 5 5 0 0 0 19.9 1S18.7.7 16 2.5a13.4 13.4 0 0 0-7 0C6.3.7 5.1 1 5.1 1A5 5 0 0 0 5 4.8a5.4 5.4 0 0 0-1.5 3.7c0 5.4 3.3 6.5 6.4 6.9a3.4 3.4 0 0 0-.9 2.6V22" /></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></symbol>
+    </svg>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="index.html" aria-label="Thread Exporter for Reddit, home">
+          <img src="../../icons/icon-128.png" alt="" width="36" height="36" />
+          <span class="brand-text">
+            <span class="brand-name">Thread Exporter</span>
+            <span class="brand-sub">for Reddit</span>
+          </span>
+        </a>
+        <div class="topbar-actions">
+          <button type="button" class="btn btn-ghost btn-icon" id="theme-toggle" aria-label="Theme: match system">
+            <svg class="icon" aria-hidden="true"><use href="#i-monitor" /></svg>
+          </button>
+          <a class="btn btn-ghost btn-icon" href="https://github.com/AleksKamb/reddit-thread-exporter" target="_blank" rel="noopener" aria-label="Source code on GitHub (opens in a new tab)">
+            <svg class="icon" aria-hidden="true"><use href="#i-github" /></svg>
+          </a>
+          <button type="button" class="btn btn-secondary" id="help-open" aria-haspopup="dialog">
+            <svg class="icon" aria-hidden="true"><use href="#i-help" /></svg>
+            Help
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="layout">
+      <section class="banner" id="welcome" hidden aria-labelledby="welcome-title">
+        <div>
+          <h2 id="welcome-title">You're all set</h2>
+          <p>Paste a few Reddit thread links, press <strong>Export</strong>, and the files land in your Downloads folder. New here? The guide takes a minute.</p>
+        </div>
+        <div class="banner-actions">
+          <button type="button" class="btn btn-primary" id="welcome-guide">Read the guide</button>
+          <button type="button" class="btn btn-ghost btn-icon" id="welcome-close" aria-label="Dismiss welcome message">
+            <svg class="icon" aria-hidden="true"><use href="#i-x" /></svg>
+          </button>
+        </div>
+      </section>
+
+      <div class="col-main">
+        <!-- Step 1: add threads -->
+        <section class="card" aria-labelledby="add-title">
+          <header class="card-head">
+            <span class="step" aria-hidden="true">1</span>
+            <div class="card-head-text">
+              <h2 id="add-title">Add threads</h2>
+              <p class="muted">Paste links, upload a file, or pick from your open Reddit tabs.</p>
+            </div>
+          </header>
+
+          <div class="tabs" role="tablist" aria-label="Ways to add threads">
+            <button type="button" role="tab" class="tab" id="tab-paste" aria-controls="panel-paste" aria-selected="true">
+              <svg class="icon" aria-hidden="true"><use href="#i-link" /></svg>Paste links
+            </button>
+            <button type="button" role="tab" class="tab" id="tab-file" aria-controls="panel-file" aria-selected="false" tabindex="-1">
+              <svg class="icon" aria-hidden="true"><use href="#i-upload" /></svg>Upload file
+            </button>
+            <button type="button" role="tab" class="tab" id="tab-tabs" aria-controls="panel-tabs" aria-selected="false" tabindex="-1">
+              <svg class="icon" aria-hidden="true"><use href="#i-tabs" /></svg>Open tabs
+            </button>
+          </div>
+
+          <div class="tab-panel" role="tabpanel" id="panel-paste" aria-labelledby="tab-paste">
+            <label class="label" for="paste-input">Reddit thread links</label>
+            <textarea
+              id="paste-input"
+              class="input textarea"
+              rows="6"
+              spellcheck="false"
+              aria-describedby="paste-hint"
+              placeholder="https://www.reddit.com/r/webdev/comments/1kgwx17/…&#10;https://redd.it/1nvw4vi&#10;One per line, or mixed in with any other text."
+            ></textarea>
+            <div class="row-between">
+              <p class="hint" id="paste-hint">Any text works. Links are picked out automatically. <span class="kbd-hint">Press <kbd data-mod>Ctrl</kbd> <kbd>Enter</kbd> to add.</span></p>
+              <button type="button" class="btn btn-primary" id="paste-add">Add to queue</button>
+            </div>
+          </div>
+
+          <div class="tab-panel" role="tabpanel" id="panel-file" aria-labelledby="tab-file" hidden>
+            <label class="dropzone" id="dropzone" for="file-input">
+              <input type="file" id="file-input" class="visually-hidden" accept=".csv,.tsv,.txt,.md,.json,text/csv,text/plain,application/json" />
+              <svg class="icon icon-xl" aria-hidden="true"><use href="#i-file" /></svg>
+              <span class="dropzone-title">Drop a CSV or text file here</span>
+              <span class="dropzone-sub">or <span class="link-like">browse your files</span></span>
+              <span class="hint">Every Reddit thread link in the file is found, in any column. CSV, TSV, TXT, Markdown and JSON, up to 5 MB.</span>
+            </label>
+          </div>
+
+          <div class="tab-panel" role="tabpanel" id="panel-tabs" aria-labelledby="tab-tabs" hidden>
+            <div class="row-between">
+              <p class="hint" id="open-tabs-summary">Looking for Reddit threads in your open tabs…</p>
+              <button type="button" class="btn btn-ghost btn-sm" id="open-tabs-refresh">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh" /></svg>Refresh
+              </button>
+            </div>
+            <ul class="checklist" id="open-tabs-list" aria-labelledby="open-tabs-summary"></ul>
+            <div class="row-end">
+              <button type="button" class="btn btn-primary" id="open-tabs-add" disabled>Add selected</button>
+            </div>
+          </div>
+
+          <div class="notice" id="add-result" role="status" hidden></div>
+        </section>
+
+        <!-- Step 2: the queue -->
+        <section class="card" aria-labelledby="queue-title">
+          <header class="card-head">
+            <span class="step" aria-hidden="true">2</span>
+            <div class="card-head-text">
+              <h2 id="queue-title">Queue</h2>
+              <p class="muted" id="queue-summary">No threads yet</p>
+            </div>
+            <div class="card-head-actions">
+              <button type="button" class="btn btn-ghost btn-sm" id="clear-done" hidden>Clear exported</button>
+              <button type="button" class="btn btn-ghost btn-sm btn-danger-text" id="clear-all" hidden>
+                <svg class="icon" aria-hidden="true"><use href="#i-trash" /></svg>Clear all
+              </button>
+            </div>
+          </header>
+
+          <div class="empty" id="queue-empty">
+            <svg class="icon icon-xl" aria-hidden="true"><use href="#i-inbox" /></svg>
+            <p class="empty-title">Your queue is empty</p>
+            <p class="muted">Add thread links in step 1. You can also right-click any Reddit thread link and choose <em>Add thread to Thread Exporter</em>.</p>
+          </div>
+          <ol class="queue" id="queue-list" aria-label="Threads in the queue"></ol>
+        </section>
+      </div>
+
+      <!-- Step 3: export -->
+      <aside class="col-side">
+        <section class="card card-sticky" aria-labelledby="export-title">
+          <header class="card-head">
+            <span class="step" aria-hidden="true">3</span>
+            <div class="card-head-text">
+              <h2 id="export-title">Export</h2>
+              <p class="muted">Pick formats, then start.</p>
+            </div>
+          </header>
+
+          <fieldset class="formats" id="formats">
+            <legend class="label">Formats</legend>
+            <!-- Filled from EXPORT_FORMATS in app.js -->
+          </fieldset>
+
+          <details class="options" id="options">
+            <summary>
+              <span>Options</span>
+              <span class="options-summary muted" id="options-summary"></span>
+            </summary>
+            <div class="options-body">
+              <div class="field">
+                <label class="label" for="opt-sort">Comment order</label>
+                <select class="input select" id="opt-sort">
+                  <option value="confidence">Best (Reddit's default)</option>
+                  <option value="top">Top</option>
+                  <option value="new">New</option>
+                  <option value="controversial">Controversial</option>
+                  <option value="old">Old</option>
+                  <option value="qa">Q&amp;A</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="opt-delay">Pause between requests</label>
+                <select class="input select" id="opt-delay" aria-describedby="opt-delay-hint">
+                  <option value="2">2 seconds (faster)</option>
+                  <option value="3">3 seconds (recommended)</option>
+                  <option value="5">5 seconds</option>
+                  <option value="10">10 seconds (gentlest)</option>
+                </select>
+                <p class="hint" id="opt-delay-hint">Longer pauses make Reddit less likely to slow you down.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="opt-expand" aria-describedby="opt-expand-hint" />
+                <span class="switch-track" aria-hidden="true"></span>
+                <span class="switch-text">
+                  <span>Load hidden replies</span>
+                  <span class="hint" id="opt-expand-hint">Also fetch comments behind "load more replies". Slower: up to 10 extra requests per thread.</span>
+                </span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="opt-usernames" aria-describedby="opt-usernames-hint" />
+                <span class="switch-track" aria-hidden="true"></span>
+                <span class="switch-text">
+                  <span>Include usernames</span>
+                  <span class="hint" id="opt-usernames-hint">Off by default, so exports don't carry personal data you don't need.</span>
+                </span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="opt-autodownload" />
+                <span class="switch-track" aria-hidden="true"></span>
+                <span class="switch-text">
+                  <span>Download when finished</span>
+                  <span class="hint">Save the files as soon as the export completes.</span>
+                </span>
+              </label>
+              <div class="field">
+                <label class="label" for="opt-filename">File name</label>
+                <input class="input" id="opt-filename" type="text" autocomplete="off" spellcheck="false" placeholder="reddit-threads-2026-10-17-1430" aria-describedby="opt-filename-hint" />
+                <p class="hint" id="opt-filename-hint">Saved in <code>Downloads/Reddit Thread Exporter/</code>. Leave empty for a dated name.</p>
+              </div>
+            </div>
+          </details>
+
+          <div class="run" id="run-panel">
+            <div class="run-idle" id="run-idle">
+              <button type="button" class="btn btn-primary btn-lg btn-block" id="start" aria-describedby="start-hint">
+                <svg class="icon" aria-hidden="true"><use href="#i-play" /></svg>
+                <span id="start-label">Start export</span>
+              </button>
+              <p class="hint center" id="start-hint"></p>
+            </div>
+
+            <div class="run-active" id="run-active" hidden>
+              <div class="run-head">
+                <span class="run-state" id="run-state">Exporting</span>
+                <span class="run-count" id="run-count">0 / 0</span>
+              </div>
+              <div class="progress" id="progress" role="progressbar" aria-label="Export progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="progress-bar" id="progress-bar"></div>
+              </div>
+              <p class="run-current" id="run-current" aria-live="polite"></p>
+              <p class="run-wait" id="run-wait" hidden>
+                <svg class="icon" aria-hidden="true"><use href="#i-clock" /></svg>
+                <span id="run-wait-text"></span>
+              </p>
+              <div class="btn-row">
+                <button type="button" class="btn btn-secondary" id="pause">
+                  <svg class="icon" aria-hidden="true"><use href="#i-pause" /></svg><span id="pause-label">Pause</span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-danger-text" id="stop">
+                  <svg class="icon" aria-hidden="true"><use href="#i-stop" /></svg>Stop
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="result" id="result" hidden>
+            <p class="result-title" id="result-title"></p>
+            <p class="muted" id="result-detail"></p>
+          </div>
+
+          <div class="downloads">
+            <button type="button" class="btn btn-secondary btn-block" id="download" disabled aria-describedby="download-hint">
+              <svg class="icon" aria-hidden="true"><use href="#i-download" /></svg>
+              <span id="download-label">Download files</span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-block" id="copy-markdown" disabled>
+              <svg class="icon" aria-hidden="true"><use href="#i-copy" /></svg>
+              <span id="copy-label">Copy as Markdown</span>
+            </button>
+            <p class="hint center" id="download-hint"></p>
+          </div>
+
+          <details class="log" id="log">
+            <summary>Activity log <span class="log-count" id="log-count"></span></summary>
+            <ol class="log-list" id="log-list" aria-live="off"></ol>
+          </details>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <p>Runs entirely in your browser. Nothing is sent anywhere except reddit.com.</p>
+      <p>
+        <span id="app-version">v1.0.0</span> ·
+        <a href="https://github.com/AleksKamb/reddit-thread-exporter" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="https://github.com/AleksKamb/reddit-thread-exporter/issues" target="_blank" rel="noopener">Report a problem</a> ·
+        Not affiliated with Reddit, Inc.
+      </p>
+    </footer>
+
+    <!-- Help -->
+    <dialog class="dialog dialog-help" id="help-dialog" aria-labelledby="help-title">
+      <div class="dialog-head">
+        <h2 id="help-title">How Thread Exporter works</h2>
+        <button type="button" class="btn btn-ghost btn-icon" data-close aria-label="Close help">
+          <svg class="icon" aria-hidden="true"><use href="#i-x" /></svg>
+        </button>
+      </div>
+      <div class="help-layout">
+        <nav class="help-nav" aria-label="Help topics">
+          <a href="#help-start">Quick start</a>
+          <a href="#help-adding">Adding threads</a>
+          <a href="#help-formats">Export formats</a>
+          <a href="#help-options">Options</a>
+          <a href="#help-how">What happens during an export</a>
+          <a href="#help-limits">Speed and rate limits</a>
+          <a href="#help-privacy">Privacy</a>
+          <a href="#help-trouble">Troubleshooting</a>
+          <a href="#help-keys">Keyboard shortcuts</a>
+        </nav>
+        <div class="help-body" id="help-body" tabindex="0">
+          <section id="help-start">
+            <h3>Quick start</h3>
+            <ol class="steps">
+              <li><strong>Add threads.</strong> Paste Reddit thread links into step 1 and press <em>Add to queue</em>.</li>
+              <li><strong>Pick formats.</strong> Markdown and JSON are on by default. Add CSV for spreadsheets.</li>
+              <li><strong>Start the export.</strong> Threads are fetched one by one, then the files are saved to <code>Downloads/Reddit Thread Exporter/</code>.</li>
+            </ol>
+            <p>Your queue and finished threads are kept until you clear them, so you can close this tab and come back later.</p>
+          </section>
+
+          <section id="help-adding">
+            <h3>Adding threads</h3>
+            <dl class="def-list">
+              <dt>Paste links</dt>
+              <dd>Paste one link per line, or any text that contains links: an email, a spreadsheet column, a Markdown list. Links that aren't threads (a subreddit, a user page) are listed so you can check them.</dd>
+              <dt>Upload file</dt>
+              <dd>Drop a CSV, TSV, TXT, Markdown or JSON file. Every thread link in the file is found, whatever column it's in.</dd>
+              <dt>Open tabs</dt>
+              <dd>Lists the Reddit threads open in your browser. Tick the ones you want.</dd>
+              <dt>Right-click menu</dt>
+              <dd>On any Reddit page, right-click a thread link and choose <em>Add thread to Thread Exporter</em>. On a thread page, right-click anywhere. The toolbar badge shows how many threads are waiting.</dd>
+            </dl>
+            <p>These link types are recognised:</p>
+            <ul class="code-list">
+              <li><code>https://www.reddit.com/r/&lt;sub&gt;/comments/&lt;id&gt;/&lt;title&gt;/</code></li>
+              <li><code>old.reddit.com</code>, <code>new.reddit.com</code>, <code>np.reddit.com</code> and mobile links</li>
+              <li>Links to a single comment (the whole thread is exported)</li>
+              <li><code>https://redd.it/&lt;id&gt;</code> short links</li>
+              <li><code>/r/&lt;sub&gt;/s/&lt;code&gt;</code> share links from the Reddit app</li>
+              <li>Bare paths like <code>/r/&lt;sub&gt;/comments/&lt;id&gt;</code></li>
+            </ul>
+          </section>
+
+          <section id="help-formats">
+            <h3>Export formats</h3>
+            <p>Each format becomes one file that contains every exported thread.</p>
+            <dl class="def-list">
+              <dt>Markdown <code>.md</code></dt>
+              <dd>A readable document: title, post, then nested comments with their scores. Opens in any text editor, Notion or Obsidian, and works well as input for AI tools.</dd>
+              <dt>CSV <code>.csv</code></dt>
+              <dd>One row per post and per comment, with columns for thread, parent, depth, score, date and text. Opens in Excel, Numbers and Google Sheets.</dd>
+              <dt>JSON <code>.json</code></dt>
+              <dd>A clean structure with nested replies and documented fields. Best for scripts and data analysis.</dd>
+              <dt>Raw Reddit JSON <code>.raw.json</code></dt>
+              <dd>Reddit's API responses exactly as received, for developers who want every field.</dd>
+            </dl>
+            <p><strong>Copy as Markdown</strong> puts the Markdown export on your clipboard, ready to paste.</p>
+          </section>
+
+          <section id="help-options">
+            <h3>Options</h3>
+            <dl class="def-list">
+              <dt>Comment order</dt>
+              <dd>The order Reddit returns comments in: Best, Top, New, Controversial, Old or Q&amp;A. It also decides which comments make the cut when a thread is very large.</dd>
+              <dt>Pause between requests</dt>
+              <dd>How long to wait between two requests to Reddit. 3 seconds is a good balance. Use a longer pause for big batches.</dd>
+              <dt>Load hidden replies</dt>
+              <dd>Reddit returns up to about 500 comments per thread and hides the rest behind "load more replies". With this on, the exporter fetches those too, using up to 10 extra requests per thread. "Continue this thread" chains that go very deep are not followed.</dd>
+              <dt>Include usernames</dt>
+              <dd>Adds the author of the post and each comment. Off by default: most research doesn't need them, and leaving them out keeps exports free of personal data.</dd>
+              <dt>Download when finished</dt>
+              <dd>Saves the files automatically when an export completes. You can always download again with <em>Download files</em>.</dd>
+              <dt>File name</dt>
+              <dd>The name of the exported files, without extension. Leave it empty for a dated name like <code>reddit-threads-2026-10-17-1430</code>.</dd>
+            </dl>
+          </section>
+
+          <section id="help-how">
+            <h3>What happens during an export</h3>
+            <ol class="steps">
+              <li>The exporter looks for an open reddit.com tab. If there isn't one, it opens one in the background and closes it again at the end.</li>
+              <li>For each thread, it asks Reddit for the thread's data from inside that tab, the same way reddit.com loads comments itself. It uses your normal Reddit session, so threads you can see in your browser can be exported.</li>
+              <li>Finished threads are saved inside the extension right away. Stopping, or closing this tab, keeps the work already done.</li>
+              <li>When the queue is done, the files are built in your browser and saved to your Downloads folder.</li>
+            </ol>
+          </section>
+
+          <section id="help-limits">
+            <h3>Speed and rate limits</h3>
+            <p>Threads are fetched one at a time with a pause in between, so Reddit isn't flooded. With the default 3-second pause, 30 threads take about two minutes.</p>
+            <p>If Reddit asks for a break (HTTP 429), the exporter waits the time Reddit asks for and then carries on by itself. The countdown is shown under the progress bar. If it keeps happening, choose a longer pause in <em>Options</em>.</p>
+          </section>
+
+          <section id="help-privacy">
+            <h3>Privacy</h3>
+            <ul>
+              <li>Everything runs in your browser. The extension has no server, no analytics and no tracking.</li>
+              <li>It only talks to reddit.com, and only to fetch the threads you added.</li>
+              <li>Your queue, settings and exported threads are stored locally in Chrome. <em>Clear all</em> deletes them.</li>
+              <li>Please use exports for personal research and respect Reddit's terms and the people who wrote the comments.</li>
+            </ul>
+          </section>
+
+          <section id="help-trouble">
+            <h3>Troubleshooting</h3>
+            <details class="faq">
+              <summary>"Reddit sent a web page instead of data"</summary>
+              <p>Reddit showed a login page or a check ("Are you a human?") instead of the thread. Open <a href="https://www.reddit.com" target="_blank" rel="noopener">reddit.com</a> in a normal tab, log in or complete the check, then press <em>Start export</em> again. Failed threads are retried.</p>
+            </details>
+            <details class="faq">
+              <summary>"Reddit refused access"</summary>
+              <p>The community is private, quarantined or banned, or the thread needs you to be logged in. If you can open the thread in your browser, log in to reddit.com and try again.</p>
+            </details>
+            <details class="faq">
+              <summary>"Reddit kept rate-limiting the requests"</summary>
+              <p>Reddit asked for several breaks in a row. Open <em>Options</em>, choose a longer pause, wait a few minutes and start again. Threads that were already exported are skipped.</p>
+            </details>
+            <details class="faq">
+              <summary>A share link doesn't work</summary>
+              <p>Share links (<code>/s/…</code>) are opened during the export to find the real thread. If one fails, open it in your browser and paste the link from the address bar instead.</p>
+            </details>
+            <details class="faq">
+              <summary>Some comments are missing</summary>
+              <p>Large threads hide comments behind "load more replies". Turn on <em>Load hidden replies</em> in Options and export the thread again: remove it from the queue, add it back, and start. Deleted and removed comments are left out unless someone replied to them.</p>
+            </details>
+            <details class="faq">
+              <summary>I can't find the downloaded files</summary>
+              <p>They're in your Downloads folder, inside <code>Reddit Thread Exporter</code>. If Chrome asks where to save each file, that's your Chrome setting "Ask where to save each file before downloading".</p>
+            </details>
+          </section>
+
+          <section id="help-keys">
+            <h3>Keyboard shortcuts</h3>
+            <dl class="keys">
+              <dt><kbd>?</kbd></dt><dd>Open this help</dd>
+              <dt><kbd data-mod>Ctrl</kbd> <kbd>Enter</kbd></dt><dd>Add the pasted links</dd>
+              <dt><kbd>Esc</kbd></dt><dd>Close this help</dd>
+            </dl>
+          </section>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Confirmation for destructive actions -->
+    <dialog class="dialog dialog-confirm" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+      <form method="dialog">
+        <h2 id="confirm-title"></h2>
+        <p id="confirm-text" class="muted"></p>
+        <div class="btn-row btn-row-end">
+          <button type="submit" class="btn btn-secondary" value="cancel" autofocus>Cancel</button>
+          <button type="submit" class="btn btn-danger" value="confirm" id="confirm-ok">Delete</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="queue-item-template">
+      <li class="queue-item">
+        <span class="status-dot" aria-hidden="true"><svg class="icon"><use href="#i-clock" /></svg></span>
+        <div class="qi-body">
+          <a class="qi-title" target="_blank" rel="noopener"></a>
+          <div class="qi-meta">
+            <span class="qi-sub"></span>
+            <span class="qi-status"></span>
+          </div>
+          <p class="qi-error"></p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm qi-remove">
+          <svg class="icon" aria-hidden="true"><use href="#i-x" /></svg>
+        </button>
+      </li>
+    </template>
+  </body>
+</html>

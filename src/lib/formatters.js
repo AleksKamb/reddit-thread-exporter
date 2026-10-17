@@ -16,9 +16,12 @@ import { walkComments } from './thread-model.js';
  * @typedef {object} ExportFormat
  * @property {string} id
  * @property {string} label
+ * @property {string} shortLabel   For tight spaces like the popup's format chips.
  * @property {string} extension
  * @property {string} mimeType
- * @property {string} description
+ * @property {string} icon         Symbol ID in the shared icon sprite.
+ * @property {string} tagline      A few words on what the format is good for.
+ * @property {string} description  One sentence for help text and tooltips.
  */
 
 /** Every format the exporter can write, in the order they are shown in the UI. */
@@ -26,29 +29,41 @@ export const EXPORT_FORMATS = /** @type {const} */ ([
   {
     id: 'markdown',
     label: 'Markdown',
+    shortLabel: 'Markdown',
     extension: 'md',
     mimeType: 'text/markdown',
+    icon: 'i-markdown',
+    tagline: 'Reading, notes, AI tools',
     description: 'Readable document with nested replies. Good for reading, notes and AI tools.',
   },
   {
     id: 'csv',
     label: 'CSV',
+    shortLabel: 'CSV',
     extension: 'csv',
     mimeType: 'text/csv',
+    icon: 'i-table',
+    tagline: 'Excel and Sheets',
     description: 'One row per post and comment. Opens in Excel, Numbers and Google Sheets.',
   },
   {
     id: 'json',
     label: 'JSON',
+    shortLabel: 'JSON',
     extension: 'json',
     mimeType: 'application/json',
+    icon: 'i-braces',
+    tagline: 'Scripts and data work',
     description: 'Clean, documented structure with nested replies. Good for scripts and data work.',
   },
   {
     id: 'raw',
-    label: 'Raw Reddit JSON',
+    label: 'Raw JSON',
+    shortLabel: 'Raw',
     extension: 'raw.json',
     mimeType: 'application/json',
+    icon: 'i-code',
+    tagline: "Reddit's API, untouched",
     description: "Reddit's original API response, untouched. For developers.",
   },
 ]);
@@ -285,9 +300,19 @@ function escapeInline(text) {
   return text.replace(/([[\]\\])/g, '\\$1');
 }
 
-/** Quotes a CSV cell when it contains a comma, quote or line break. */
-function csvCell(value) {
-  const text = String(value ?? '');
+/**
+ * Makes one CSV cell safe:
+ * - Text that starts with `=`, `+`, `-`, `@`, tab or carriage return gets a leading `'`,
+ *   so spreadsheet apps show it as text instead of running it as a formula
+ *   ("CSV injection"). Numbers are left as they are.
+ * - Cells with a comma, quote or line break are quoted.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function csvCell(value) {
+  let text = String(value ?? '');
+  if (typeof value !== 'number' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 

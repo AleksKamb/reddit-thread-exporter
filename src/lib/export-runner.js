@@ -72,6 +72,8 @@ const MAX_ATTEMPTS = 4;
 const DEFAULT_RATE_LIMIT_WAIT_S = 60;
 const MAX_WAIT_S = 600;
 const MORE_CHILDREN_BATCH = 100;
+/** Floor for the pause between requests, even if stored settings say otherwise. */
+export const MIN_DELAY_S = 1;
 
 export class ExportRunner extends EventTarget {
   /** @type {RunnerState} */
@@ -93,7 +95,11 @@ export class ExportRunner extends EventTarget {
   constructor({ request, settings, sleep = abortableSleep, now = () => Date.now() }) {
     super();
     this.request = request;
-    this.settings = { maxMoreRequests: 10, ...settings };
+    this.settings = {
+      maxMoreRequests: 10,
+      ...settings,
+      delaySeconds: Math.max(MIN_DELAY_S, Number(settings.delaySeconds) || MIN_DELAY_S),
+    };
     this.sleep = sleep;
     this.now = now;
   }

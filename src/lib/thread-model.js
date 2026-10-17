@@ -8,6 +8,8 @@
  * @module thread-model
  */
 
+import { redditUrl, safeWebUrl } from './reddit-links.js';
+
 /**
  * @typedef {object} Comment
  * @property {string} id
@@ -76,8 +78,8 @@ export function normalizeThread(listing, extraThings = [], { includeUsernames = 
     upvoteRatio: post.upvote_ratio ?? null,
     flair: post.link_flair_text || null,
     createdAt: toIso(post.created_utc),
-    url: `https://www.reddit.com${post.permalink}`,
-    linkUrl: post.is_self || !post.url ? null : post.url,
+    url: redditUrl(post.permalink),
+    linkUrl: post.is_self ? null : safeWebUrl(post.url),
     body: post.selftext ?? '',
     commentCounts: {
       reported: post.num_comments ?? 0,
@@ -232,7 +234,7 @@ function toComment(data, context) {
     edited: Boolean(data.edited),
     isRemoved,
     body: isRemoved ? '' : body,
-    url: data.permalink ? `https://www.reddit.com${data.permalink}` : '',
+    url: redditUrl(data.permalink),
     replies: [],
   };
 }

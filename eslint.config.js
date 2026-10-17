@@ -26,6 +26,20 @@ export default [
       eqeqeq: ['error', 'smart'],
       'prefer-const': 'error',
       'no-var': 'error',
+      // Text from Reddit must never be parsed as HTML. Build DOM nodes and use textContent.
+      'no-restricted-properties': [
+        'error',
+        { property: 'innerHTML', message: 'Use textContent or DOM methods; Reddit content is untrusted.' },
+        { property: 'outerHTML', message: 'Use textContent or DOM methods; Reddit content is untrusted.' },
+        { property: 'insertAdjacentHTML', message: 'Use DOM methods; Reddit content is untrusted.' },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        { selector: "CallExpression[callee.property.name='write'][callee.object.name='document']", message: 'document.write is not allowed.' },
+      ],
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
     },
   },
 ];

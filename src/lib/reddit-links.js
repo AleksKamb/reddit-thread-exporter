@@ -39,7 +39,7 @@ const THREAD_PATH = new RegExp(`^/(?:r/(${SUBREDDIT})/)?comments/(${POST_ID})(?:
 const SHARE_PATH = new RegExp(`^/r/(${SUBREDDIT})/s/([A-Za-z0-9]+)`, 'i');
 
 /** reddit.com and any subdomain of it (www, old, new, np, m, sh, …). */
-const REDDIT_HOST = /^(?:[a-z0-9-]+\.)*reddit\.com$/i;
+const REDDIT_HOST = /^(?:[a-z0-9-]{1,63}\.){0,6}reddit\.com$/i;
 
 /** The official short-link domain: https://redd.it/<id> */
 const SHORT_HOST = /^redd\.it$/i;
@@ -47,9 +47,10 @@ const SHORT_HOST = /^redd\.it$/i;
 /**
  * Finds anything that looks like a Reddit link inside free text, CSV cells, JSON or HTML.
  * Commas, quotes, brackets and whitespace end a match, so CSV and Markdown both work.
+ * Every repetition is bounded, so a huge or hostile file can't make matching slow.
  */
 const LINK_CANDIDATE =
-  /(?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:reddit\.com|redd\.it)\/[^\s"'<>,;|()[\]{}]*|(?<![\w./])\/r\/[A-Za-z0-9_]+\/(?:comments|s)\/[^\s"'<>,;|()[\]{}]*|(?<![\w./])\/comments\/[A-Za-z0-9]+[^\s"'<>,;|()[\]{}]*/gi;
+  /(?:https?:\/\/)?(?:[a-z0-9-]{1,63}\.){0,6}(?:reddit\.com|redd\.it)\/[^\s"'<>,;|()[\]{}]{0,500}|(?<![\w./])\/r\/[A-Za-z0-9_]{1,21}\/(?:comments|s)\/[^\s"'<>,;|()[\]{}]{0,500}|(?<![\w./])\/comments\/[A-Za-z0-9]{4,10}[^\s"'<>,;|()[\]{}]{0,500}/gi;
 
 /**
  * Parses a single link or path into a {@link ThreadRef}.
@@ -168,6 +169,34 @@ export function moreChildrenPath(postId, childIds, sort = 'confidence') {
 }
 
 /**
+ * Builds a reddit.com URL from a permalink returned by Reddit. Anything that isn't a
+ * plain site path (for example `//evil.example` or `@evil.example`) is rejected, so a
+ * malformed response can never turn into a link to another site.
+ *
+ * @param {unknown} permalink  e.g. `/r/webdev/comments/abc123/title/`
+ * @returns {string}           The full URL, or an empty string.
+ */
+export function redditUrl(permalink) {
+  return typeof permalink === 'string' && /^\/(?!\/)[^\s\\]*$/.test(permalink) ? `https://www.reddit.com${permalink}` : '';
+}
+
+/**
+ * Returns `url` only when it is a normal web link (http or https).
+ *
+ * @param {unknown} url
+ * @returns {string | null}
+ */
+export function safeWebUrl(url) {
+  if (typeof url !== 'string') return null;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Turns a title slug into a readable placeholder title.
  *
  * @param {string | null} slug  e.g. `if_anyone_tried_fiver_or_upwork`
@@ -183,6 +212,19 @@ export function slugToTitle(slug) {
   }
   words = words.replace(/[_-]+/g, ' ').trim();
   return words ? words[0].toUpperCase() + words.slice(1) : '';
+}
+
+/**
+ * Removes the " : r/sub" and " - Reddit" suffixes Reddit adds to page titles.
+ *
+ * @param {string} [title]
+ * @returns {string}
+ */
+export function cleanTabTitle(title = '') {
+  return title
+    .replace(/\s*[-|:]\s*Reddit\s*$/i, '')
+    .replace(/\s*[:|-]\s*r\/\w+\s*$/i, '')
+    .trim();
 }
 
 /* ------------------------------------------------------------------------ */

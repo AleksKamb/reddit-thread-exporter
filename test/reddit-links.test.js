@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { extractThreadLinks, moreChildrenPath, parseThreadLink, refKey, slugToTitle, threadJsonPath } from '../src/lib/reddit-links.js';
+import { cleanTabTitle, extractThreadLinks, moreChildrenPath, parseThreadLink, refKey, slugToTitle, threadJsonPath } from '../src/lib/reddit-links.js';
 
 describe('parseThreadLink', () => {
   const expected = {
@@ -138,6 +138,13 @@ describe('helpers', () => {
   it('keys share links separately from threads', () => {
     assert.equal(refKey({ kind: 'thread', id: 'ABC', subreddit: null, slug: null, url: '' }), 'abc');
     assert.equal(refKey({ kind: 'share', id: 'XyZ', subreddit: 's', slug: null, url: '' }), 'share:xyz');
+  });
+
+  it('cleans Reddit page titles', () => {
+    assert.equal(cleanTabTitle('How do you start freelancing? : r/freelance'), 'How do you start freelancing?');
+    assert.equal(cleanTabTitle('Web developers who freelance : r/webdev - Reddit'), 'Web developers who freelance');
+    assert.equal(cleanTabTitle('Just a title'), 'Just a title');
+    assert.equal(cleanTabTitle(), '');
   });
 
   it('turns slugs into titles', () => {

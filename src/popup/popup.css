@@ -189,6 +189,11 @@ body {
   font-size: 13.5px;
 }
 
+.quick-add .icon-btn {
+  flex: none;
+  margin-right: -2px;
+}
+
 .add-status {
   min-height: 0;
   padding: 0 8px;

@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "Thread Exporter",
   "description": "__MSG_extDescription__",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "default_locale": "en",
   "minimum_chrome_version": "116",
   "homepage_url": "https://github.com/AleksKamb/reddit-thread-exporter",

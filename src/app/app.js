@@ -169,18 +169,35 @@ async function init() {
   });
 
   // Commands from the popup when it had to open this tab.
-  if (params.has('start') || params.has('help')) {
+  if (params.has('start') || params.has('help') || params.has('upload')) {
     history.replaceState(null, '', location.pathname + (params.has('welcome') ? '?welcome=1' : ''));
-    runCommand({ start: params.has('start'), help: params.has('help') });
+    runCommand({ start: params.has('start'), help: params.has('help'), upload: params.has('upload') });
   }
 }
 
 /**
- * @param {{ start?: boolean, help?: boolean }} command
+ * Runs a command sent by the toolbar popup.
+ *
+ * @param {import('../lib/app-tab.js').AppCommand} command
  */
-function runCommand({ start, help }) {
+function runCommand({ start, help, upload }) {
   if (help) openHelp();
+  else if (upload) showUploadArea();
   else if (start && !isRunning()) startExport();
+}
+
+/**
+ * Switches to "Upload file" and draws attention to the drop zone. The file picker
+ * itself can only open from a click on this page (browsers require that).
+ */
+function showUploadArea() {
+  selectTab(/** @type {HTMLButtonElement} */ ($('tab-file')));
+  ui.dropzone.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  ui.fileInput.focus({ preventScroll: true });
+  ui.dropzone.classList.remove('is-highlighted');
+  // Restart the highlight animation even if it ran before.
+  void ui.dropzone.offsetWidth;
+  ui.dropzone.classList.add('is-highlighted');
 }
 
 function bindEvents() {
@@ -342,29 +359,34 @@ function bindDropzone() {
   });
 }
 
+/**
+ * Shows one of the "Add threads" tabs and hides the others.
+ *
+ * @param {HTMLButtonElement} tab
+ */
+function selectTab(tab) {
+  for (const other of document.querySelectorAll('[role="tab"]')) {
+    const selected = other === tab;
+    other.setAttribute('aria-selected', String(selected));
+    /** @type {HTMLElement} */ (other).tabIndex = selected ? 0 : -1;
+    $(/** @type {string} */ (other.getAttribute('aria-controls'))).hidden = !selected;
+  }
+  if (tab.id === 'tab-tabs') loadOpenTabs();
+}
+
 /** Tabs with arrow-key navigation, following the WAI-ARIA tabs pattern. */
 function bindTabs() {
   const tabs = /** @type {HTMLButtonElement[]} */ ([...document.querySelectorAll('[role="tab"]')]);
 
-  const select = (/** @type {HTMLButtonElement} */ tab) => {
-    for (const other of tabs) {
-      const selected = other === tab;
-      other.setAttribute('aria-selected', String(selected));
-      other.tabIndex = selected ? 0 : -1;
-      $(/** @type {string} */ (other.getAttribute('aria-controls'))).hidden = !selected;
-    }
-    if (tab.id === 'tab-tabs') loadOpenTabs();
-  };
-
   tabs.forEach((tab, index) => {
-    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('click', () => selectTab(tab));
     tab.addEventListener('keydown', (event) => {
       const offset = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
       const target = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs.at(-1) : offset ? tabs[(index + offset + tabs.length) % tabs.length] : null;
       if (!target) return;
       event.preventDefault();
       target.focus();
-      select(target);
+      selectTab(target);
     });
   });
 }

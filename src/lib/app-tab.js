@@ -16,6 +16,7 @@ export const APP_COMMAND = 'thread-exporter/app-command';
  * @typedef {object} AppCommand
  * @property {boolean} [start]    Start exporting the queue.
  * @property {boolean} [help]     Open the help dialog.
+ * @property {boolean} [upload]   Show the "Upload file" area, ready for a file.
  * @property {boolean} [welcome]  Show the first-run welcome banner (new tab only).
  */
 
@@ -32,8 +33,9 @@ export async function openApp(command = {}) {
   if (existing) {
     await chrome.tabs.update(existing.tabId, { active: true });
     if (existing.windowId >= 0) await chrome.windows.update(existing.windowId, { focused: true });
-    if (command.start || command.help) {
-      await chrome.runtime.sendMessage({ type: APP_COMMAND, start: Boolean(command.start), help: Boolean(command.help) }).catch(() => {});
+    if (command.start || command.help || command.upload) {
+      const message = { type: APP_COMMAND, start: Boolean(command.start), help: Boolean(command.help), upload: Boolean(command.upload) };
+      await chrome.runtime.sendMessage(message).catch(() => {});
     }
     return;
   }
@@ -42,6 +44,7 @@ export async function openApp(command = {}) {
   if (command.welcome) params.set('welcome', '1');
   if (command.start) params.set('start', '1');
   if (command.help) params.set('help', '1');
+  if (command.upload) params.set('upload', '1');
   const query = params.size ? `?${params}` : '';
   await chrome.tabs.create({ url: `${appUrl}${query}` });
 }
@@ -52,7 +55,7 @@ export async function openApp(command = {}) {
  *
  * @param {unknown} message
  * @param {chrome.runtime.MessageSender} sender
- * @returns {message is { type: string, start: boolean, help: boolean }}
+ * @returns {message is { type: string, start: boolean, help: boolean, upload: boolean }}
  */
 export function isAppCommand(message, sender) {
   return sender.id === chrome.runtime.id && typeof message === 'object' && message !== null && /** @type {any} */ (message).type === APP_COMMAND;

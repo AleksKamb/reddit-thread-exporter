@@ -28,7 +28,7 @@ Thread Exporter does it from inside your own browser, the same way reddit.com lo
 ## Features
 
 - **Add threads any way you like.** Paste links, drop a CSV or text file (links are found in any column), tick open Reddit tabs, right-click any thread link on Reddit, or add the thread you're reading from the toolbar popup.
-- **Quick settings in the toolbar.** The popup shows your queue and live progress, adds the current thread in one click, and has the most-used settings, with a link to the full overview.
+- **Quick settings in the toolbar.** The popup shows your queue and live progress, adds the current thread in one click, takes pasted links, jumps to file upload, and has the most-used settings, with a link to the full overview.
 - **Understands every Reddit link.** Full URLs, `old.` / `new.` / mobile links, comment permalinks, `redd.it` short links, app share links (`/r/…/s/…`) and bare `/r/…/comments/…` paths. Duplicates are skipped and non-thread links are flagged.
 - **Four formats.** Readable Markdown with nested replies, an Excel-ready CSV, a clean JSON tree, and Reddit's raw JSON. Or one click to copy the Markdown.
 - **Polite and resilient.** One request at a time with a pause in between. Waits out rate limits on its own, retries temporary errors, and tells you exactly why a thread failed.
@@ -65,7 +65,7 @@ The extension works in Chrome 116 or newer, and in other Chromium browsers (Edge
 
 **From a release (no tools needed)**
 
-1. Download `reddit-thread-exporter-v1.1.0.zip` from the [latest release](https://github.com/AleksKamb/reddit-thread-exporter/releases/latest) and unzip it.
+1. Download `reddit-thread-exporter-v1.2.0.zip` from the [latest release](https://github.com/AleksKamb/reddit-thread-exporter/releases/latest) and unzip it.
 2. Open `chrome://extensions` and turn on **Developer mode** (top right).
 3. Click **Load unpacked** and select the unzipped folder.
 4. Pin the extension from the puzzle-piece menu so the button is always one click away.
@@ -85,7 +85,7 @@ Then follow steps 2–4 above and select the cloned folder. No build step is nee
 3. **Pick formats** in the Export panel. Markdown and JSON are on by default.
 4. **Press Export.** Threads are fetched one by one. When the queue is done, the files are saved to `Downloads/Reddit Thread Exporter/`.
 
-**From the toolbar popup** you can do the quick things without opening the page: add the thread you're reading, paste a link, change formats and options, and press **Export**. The export then runs in the overview page, and the popup shows its progress.
+**From the toolbar popup** you can do the quick things without opening the page: add the thread you're reading, paste a link, change formats and options, and press **Export**. The upload icon next to the paste field opens the page on **Upload file**, ready for your CSV. The export then runs in the overview page, and the popup shows its progress.
 
 If you're not logged in to Reddit, or Reddit wants to check your browser, open reddit.com once in a normal tab first. The help page (**Help** in the top bar, or <kbd>?</kbd>) covers every option and the common problems.
 

@@ -11,7 +11,7 @@ Meant for reading, note apps (Obsidian, Notion) and AI tools. Replies are nested
 ```markdown
 # Reddit threads
 
-Exported 2026-10-17 with Thread Exporter for Reddit 1.1.0 · 2 threads · 75 comments
+Exported 2026-10-17 with Thread Exporter for Reddit 1.2.0 · 2 threads · 75 comments
 
 ## Contents
 
@@ -65,7 +65,7 @@ A clean structure that mirrors the Markdown: threads with nested `replies`.
 ```jsonc
 {
   "exportedAt": "2026-10-17T11:10:25.157Z",
-  "exportedWith": "Thread Exporter for Reddit 1.1.0",
+  "exportedWith": "Thread Exporter for Reddit 1.2.0",
   "threadCount": 1,
   "threads": [
     {

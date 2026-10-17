@@ -4,6 +4,12 @@ All notable changes to this project are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-17
+
+### Added
+
+- **Upload from the popup.** The upload icon next to the popup's paste field opens the overview on *Upload file*, with the drop zone highlighted and ready. (Chrome closes a popup while a file picker is open, so the picker itself opens on the page.)
+
 ## [1.1.0] - 2026-10-17
 
 ### Added

@@ -3,7 +3,7 @@
  *
  * - "This page": adds the thread in the current tab with one click.
  * - Shows the queue counts and, while an export runs, its progress.
- * - Quick add for pasted links, and the most-used settings.
+ * - Quick add for pasted links, a shortcut to file upload, and the most-used settings.
  * - Export opens the exporter page and starts the export there, because a popup
  *   closes as soon as it loses focus and can't run long tasks itself.
  */
@@ -110,6 +110,9 @@ function bindEvents() {
   $('open-overview').addEventListener('click', () => openAndClose());
   $('open-app').addEventListener('click', () => openAndClose());
   $('open-help').addEventListener('click', () => openAndClose({ help: true }));
+  // A file picker can't be opened from the popup reliably: the popup closes as soon as
+  // the picker takes focus, and the file is lost. The overview page handles uploads.
+  $('open-upload').addEventListener('click', () => openAndClose({ upload: true }));
 }
 
 /* ---- This page ---------------------------------------------------------- */

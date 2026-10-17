@@ -444,6 +444,19 @@ body {
   box-shadow: var(--focus-ring);
 }
 
+/* Shown when the popup's Upload button brings you here. */
+.dropzone.is-highlighted {
+  animation: dropzone-call 1.2s ease 2;
+}
+
+@keyframes dropzone-call {
+  50% {
+    border-color: var(--reddit);
+    background: var(--pill);
+    box-shadow: 0 0 0 6px rgb(255 69 0 / 0.18);
+  }
+}
+
 .dropzone .orb {
   margin-bottom: 8px;
 }

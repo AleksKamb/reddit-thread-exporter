@@ -151,6 +151,113 @@
             <ol class="queue" id="queue-list" aria-label="Threads in the queue"></ol>
           </div>
         </section>
+
+        <!-- Agent access (MCP) -->
+        <section class="card" id="agent-card" aria-labelledby="agent-title">
+          <header class="card-head">
+            <span class="step step-icon" aria-hidden="true"><svg class="icon"><use href="../shared/icons.svg#i-sparkle" /></svg></span>
+            <div class="card-head-text">
+              <h2 id="agent-title">Agent access</h2>
+              <p class="muted">Let AI agents like Claude Code export threads through MCP, within the limits you set.</p>
+            </div>
+            <span class="badge" id="agent-badge">Off</span>
+          </header>
+
+          <div class="panel agent-panel">
+            <label class="switch pill-row agent-switch">
+              <input type="checkbox" id="agent-enabled" aria-describedby="agent-connection-text" />
+              <span class="switch-track" aria-hidden="true"></span>
+              <span class="switch-text">
+                <span>Allow agents</span>
+                <span class="hint" id="agent-connection-text">Agents can't use the extension.</span>
+              </span>
+            </label>
+
+            <div class="pill-row agent-run" id="agent-run" hidden>
+              <span class="orb orb-mini" aria-hidden="true"><svg class="icon"><use href="../shared/icons.svg#i-arrow-down" /></svg></span>
+              <div class="agent-run-text">
+                <span class="agent-run-title" id="agent-run-title" aria-live="polite"></span>
+                <div class="progress" role="progressbar" aria-label="Agent export progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="agent-run-progress">
+                  <div class="progress-bar" id="agent-run-bar"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pill-row agent-usage" id="agent-usage" hidden>
+              <div class="agent-usage-head">
+                <span class="label">Used today</span>
+                <span class="agent-usage-count" id="agent-usage-count">0 of 100</span>
+              </div>
+              <div class="progress" role="progressbar" aria-label="Agent usage today" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="agent-usage-progress">
+                <div class="progress-bar" id="agent-usage-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="agent-settings" id="agent-settings" hidden>
+            <div class="field-row">
+              <div class="field">
+                <label class="label" for="agent-daily-limit">Daily limit</label>
+                <select class="input select" id="agent-daily-limit" aria-describedby="agent-limit-hint">
+                  <option value="25">25 a day</option>
+                  <option value="50">50 a day</option>
+                  <option value="100">100 a day</option>
+                  <option value="200">200 a day</option>
+                  <option value="500">500 a day</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="agent-max-request">Per request</label>
+                <select class="input select" id="agent-max-request" aria-describedby="agent-limit-hint">
+                  <option value="5">5 threads</option>
+                  <option value="10">10 threads</option>
+                  <option value="25">25 threads</option>
+                  <option value="50">50 threads</option>
+                  <option value="100">100 threads</option>
+                </select>
+              </div>
+            </div>
+            <p class="hint" id="agent-limit-hint">Each thread and each search counts toward the daily limit. Agents can't change these settings.</p>
+            <label class="switch">
+              <input type="checkbox" id="agent-ask" />
+              <span class="switch-track" aria-hidden="true"></span>
+              <span class="switch-text">
+                <span>Ask before each agent export</span>
+                <span class="hint">A small window shows the threads, and nothing is fetched until you press Allow.</span>
+              </span>
+            </label>
+
+            <details class="options agent-setup" id="agent-setup">
+              <summary>
+                <svg class="icon icon-sm" aria-hidden="true"><use href="../shared/icons.svg#i-code" /></svg>
+                <span>Connect an agent</span>
+              </summary>
+              <div class="options-body">
+                <ol class="setup-steps">
+                  <li>In the repository's <code>mcp</code> folder, run <code>npm install</code> once.</li>
+                  <li>Add the server to your agent. For Claude Code:</li>
+                </ol>
+                <div class="command">
+                  <code id="agent-command">claude mcp add thread-exporter -- node /path/to/reddit-thread-exporter/mcp/server.js</code>
+                  <button type="button" class="icon-btn icon-btn-sm icon-btn-plain" id="agent-copy" aria-label="Copy the command">
+                    <svg class="icon" aria-hidden="true"><use href="../shared/icons.svg#i-copy" /></svg>
+                  </button>
+                </div>
+                <p class="hint">Replace the path with where the repository is on your computer. Chrome must stay open; the connection only works on this computer. <a href="https://github.com/AleksKamb/reddit-thread-exporter/blob/main/docs/AGENTS.md" target="_blank" rel="noopener noreferrer">Full guide</a></p>
+                <div class="field port-field">
+                  <label class="label" for="agent-port">Port</label>
+                  <input class="input" id="agent-port" type="number" min="1024" max="65535" step="1" inputmode="numeric" aria-describedby="agent-port-hint" />
+                  <p class="hint" id="agent-port-hint">Only change this if you set <code>THREAD_EXPORTER_PORT</code> for the server.</p>
+                </div>
+              </div>
+            </details>
+
+            <div class="agent-activity">
+              <h3 class="label">Recent agent activity</h3>
+              <ol class="activity-list" id="agent-activity" aria-label="Recent agent activity"></ol>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Step 3: export -->
@@ -199,6 +306,28 @@
                 </div>
               </div>
               <p class="hint" id="opt-delay-hint">The pause between requests. Longer pauses make Reddit less likely to slow you down.</p>
+              <div class="field-row">
+                <div class="field">
+                  <label class="label" for="opt-batch-size">Batch size</label>
+                  <select class="input select" id="opt-batch-size" aria-describedby="opt-batch-hint">
+                    <option value="10">10 threads</option>
+                    <option value="25">25 threads</option>
+                    <option value="50">50 threads</option>
+                    <option value="0">No batches</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="label" for="opt-batch-pause">Break between batches</label>
+                  <select class="input select" id="opt-batch-pause" aria-describedby="opt-batch-hint">
+                    <option value="15">15 s</option>
+                    <option value="30">30 s</option>
+                    <option value="60">1 min</option>
+                    <option value="120">2 min</option>
+                    <option value="300">5 min</option>
+                  </select>
+                </div>
+              </div>
+              <p class="hint" id="opt-batch-hint">A longer break after every batch, for big queues. Applies to agent exports too.</p>
               <label class="switch">
                 <input type="checkbox" id="opt-expand" aria-describedby="opt-expand-hint" />
                 <span class="switch-track" aria-hidden="true"></span>
@@ -325,6 +454,7 @@
         <nav class="help-nav" aria-label="Help topics">
           <a href="#help-start">Quick start</a>
           <a href="#help-popup">Toolbar popup</a>
+          <a href="#help-agents">Agent access (MCP)</a>
           <a href="#help-adding">Adding threads</a>
           <a href="#help-formats">Export formats</a>
           <a href="#help-options">Options</a>
@@ -355,6 +485,22 @@
               <li><strong>Export</strong> opens this page and starts the export. <strong>Open overview</strong> just opens this page.</li>
             </ul>
             <p>Tip: pin the extension from Chrome's puzzle-piece menu so the button is always visible.</p>
+          </section>
+
+          <section id="help-agents">
+            <h3>Agent access (MCP)</h3>
+            <p>AI agents like Claude Code can't click through this page, so they can use the extension through the Model Context Protocol instead. A small server from the repository's <code>mcp</code> folder runs on your computer and talks to the extension. The extension still does the work in your Chrome, with the same pauses and batch breaks as the Export button.</p>
+            <dl class="def-list">
+              <dt>What agents can do</dt>
+              <dd>Export threads and get the Markdown, JSON or CSV back; search Reddit for threads; read threads you already exported; add links to your queue; check the queue and status. They can't change any settings.</dd>
+              <dt>Your limits</dt>
+              <dd>A daily limit (each thread and each search counts), a limit per request, and the pause and batch settings in Options. Manual and agent exports never run at the same time.</dd>
+              <dt>Seeing what agents do</dt>
+              <dd>The toolbar badge shows <strong>AI</strong> while an agent is exporting, the progress appears here and in the popup, and every request is listed under <em>Recent agent activity</em>.</dd>
+              <dt>Approvals</dt>
+              <dd>Turn on <em>Ask before each agent export</em> to approve every export in a small window. Requests you don't answer are denied after two minutes.</dd>
+            </dl>
+            <p>Agent access is off until you switch on <em>Allow agents</em>. The connection only accepts this extension and programs on your own computer; websites can't use it.</p>
           </section>
 
           <section id="help-adding">
@@ -403,6 +549,8 @@
               <dd>The order Reddit returns comments in: Best, Top, New, Controversial, Old or Q&amp;A. It also decides which comments make the cut when a thread is very large.</dd>
               <dt>Pause</dt>
               <dd>How long to wait between two requests to Reddit. 3 seconds is a good balance. Use a longer pause for big batches.</dd>
+              <dt>Batch size and break between batches</dt>
+              <dd>After every batch of threads, the exporter takes a longer break before carrying on. Useful for big queues, and it applies to agent exports too. Choose <em>No batches</em> to turn it off.</dd>
               <dt>Load hidden replies</dt>
               <dd>Reddit returns up to about 500 comments per thread and hides the rest behind "load more replies". With this on, the exporter fetches those too, using up to 10 extra requests per thread. "Continue this thread" chains that go very deep are not followed.</dd>
               <dt>Include usernames</dt>

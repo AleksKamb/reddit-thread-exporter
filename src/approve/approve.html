@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Allow agent export? · Thread Exporter</title>
+    <link rel="icon" href="../../icons/icon-32.png" />
+    <link rel="stylesheet" href="../shared/theme.css" />
+    <link rel="stylesheet" href="approve.css" />
+    <script type="module" src="approve.js"></script>
+  </head>
+  <body>
+    <main class="approve" aria-labelledby="approve-title">
+      <div class="panel approve-hero">
+        <span class="orb" aria-hidden="true"><svg class="icon"><use href="../shared/icons.svg#i-sparkle" /></svg></span>
+        <h1 id="approve-title">An agent wants to export threads</h1>
+        <p class="muted" id="approve-summary">Loading the request…</p>
+      </div>
+
+      <section class="approve-list-wrap" aria-labelledby="approve-list-title">
+        <h2 class="label" id="approve-list-title">Threads</h2>
+        <ol class="approve-list" id="approve-list"></ol>
+      </section>
+
+      <p class="hint center" id="approve-timer" aria-live="polite"></p>
+
+      <div class="btn-row">
+        <button type="button" class="btn btn-secondary" id="deny">Deny</button>
+        <button type="button" class="btn btn-primary" id="allow">
+          Allow
+          <svg class="sparkle" aria-hidden="true"><use href="../shared/icons.svg#i-sparkle" /></svg>
+        </button>
+      </div>
+      <p class="hint center">Turn these prompts off under <em>Agent access</em> in the exporter.</p>
+    </main>
+  </body>
+</html>

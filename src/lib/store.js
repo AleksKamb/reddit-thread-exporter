@@ -45,9 +45,32 @@ import { refKey, slugToTitle } from './reddit-links.js';
  * @property {boolean} includeUsernames
  * @property {boolean} autoDownload
  * @property {string} fileName
+ * @property {number} batchSize          Threads per batch; 0 turns batch breaks off.
+ * @property {number} batchPauseSeconds  Break between batches.
  * @property {'system' | 'light' | 'dark'} theme
  * @property {boolean} welcomeDismissed
+ * @property {AgentSettings} agents
  */
+
+/**
+ * Limits for AI agents using the extension through MCP. Only the user can change these.
+ *
+ * @typedef {object} AgentSettings
+ * @property {boolean} enabled          Accept requests from the local MCP server at all.
+ * @property {boolean} askBeforeExport  Show an approval window before each agent export.
+ * @property {number} dailyLimit        Threads (and searches) agents may fetch per day.
+ * @property {number} maxPerRequest     Threads in a single agent request.
+ * @property {number} port              Local port of the MCP bridge.
+ */
+
+/** @type {AgentSettings} */
+export const DEFAULT_AGENT_SETTINGS = Object.freeze({
+  enabled: false,
+  askBeforeExport: false,
+  dailyLimit: 100,
+  maxPerRequest: 25,
+  port: 39317,
+});
 
 /** @type {Settings} */
 export const DEFAULT_SETTINGS = Object.freeze({
@@ -58,8 +81,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
   includeUsernames: false,
   autoDownload: true,
   fileName: '',
+  batchSize: 25,
+  batchPauseSeconds: 30,
   theme: 'system',
   welcomeDismissed: false,
+  agents: DEFAULT_AGENT_SETTINGS,
 });
 
 const QUEUE_KEY = 'queue';
@@ -182,7 +208,22 @@ export async function getThreadData(keys) {
 /** @returns {Promise<Settings>} */
 export async function getSettings() {
   const { [SETTINGS_KEY]: saved = {} } = await chrome.storage.local.get(SETTINGS_KEY);
-  return { ...DEFAULT_SETTINGS, ...saved, formats: { ...DEFAULT_SETTINGS.formats, ...saved.formats } };
+  return withDefaults(saved);
+}
+
+/**
+ * Fills in anything missing from stored settings (older versions, partial saves).
+ *
+ * @param {Partial<Settings>} saved
+ * @returns {Settings}
+ */
+function withDefaults(saved) {
+  return {
+    ...DEFAULT_SETTINGS,
+    ...saved,
+    formats: { ...DEFAULT_SETTINGS.formats, ...saved.formats },
+    agents: { ...DEFAULT_AGENT_SETTINGS, ...saved.agents },
+  };
 }
 
 /**
@@ -230,37 +271,157 @@ export function createQueueItem(ref) {
  * @property {number} finished
  * @property {number} total
  * @property {string} current   Title of the thread being exported.
+ * @property {string} [client]  For agent exports: the agent's name.
  */
 
-const RUN_STATUS_KEY = 'runStatus';
+/**
+ * Exports run either from the exporter page or for an agent (in the background worker).
+ * Each has its own status, so one never overwrites the other.
+ *
+ * @typedef {'page' | 'agent'} RunSource
+ */
+
+const RUN_STATUS_KEYS = { page: 'runStatus', agent: 'agentRunStatus' };
 
 /** @type {RunStatus} */
 export const IDLE_RUN_STATUS = Object.freeze({ state: 'idle', finished: 0, total: 0, current: '' });
 
-/** @param {RunStatus} status */
-export async function setRunStatus(status) {
-  await chrome.storage.session.set({ [RUN_STATUS_KEY]: status });
+/**
+ * @param {RunStatus} status
+ * @param {RunSource} [source='page']
+ */
+export async function setRunStatus(status, source = 'page') {
+  await chrome.storage.session.set({ [RUN_STATUS_KEYS[source]]: status });
 }
 
-/** @returns {Promise<RunStatus>} */
-export async function getRunStatus() {
-  const { [RUN_STATUS_KEY]: status } = await chrome.storage.session.get(RUN_STATUS_KEY);
+/**
+ * @param {RunSource} [source='page']
+ * @returns {Promise<RunStatus>}
+ */
+export async function getRunStatus(source = 'page') {
+  const key = RUN_STATUS_KEYS[source];
+  const { [key]: status } = await chrome.storage.session.get(key);
   return status ?? IDLE_RUN_STATUS;
 }
 
-/** @param {(status: RunStatus) => void} listener */
-export function onRunStatusChanged(listener) {
+/**
+ * @param {(status: RunStatus) => void} listener
+ * @param {RunSource} [source='page']
+ */
+export function onRunStatusChanged(listener, source = 'page') {
+  const key = RUN_STATUS_KEYS[source];
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'session' && changes[RUN_STATUS_KEY]) listener(changes[RUN_STATUS_KEY].newValue ?? IDLE_RUN_STATUS);
+    if (area === 'session' && changes[key]) listener(changes[key].newValue ?? IDLE_RUN_STATUS);
   });
+}
+
+/** Whether an export is running anywhere, so a second one never starts alongside it. */
+export async function getBusySource() {
+  const [page, agent] = await Promise.all([getRunStatus('page'), getRunStatus('agent')]);
+  if (agent.state !== 'idle') return 'agent';
+  if (page.state !== 'idle') return 'page';
+  return null;
 }
 
 /** @param {(settings: Settings) => void} listener */
 export function onSettingsChanged(listener) {
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes[SETTINGS_KEY]) {
-      const saved = changes[SETTINGS_KEY].newValue ?? {};
-      listener({ ...DEFAULT_SETTINGS, ...saved, formats: { ...DEFAULT_SETTINGS.formats, ...saved.formats } });
-    }
+    if (area === 'local' && changes[SETTINGS_KEY]) listener(withDefaults(changes[SETTINGS_KEY].newValue ?? {}));
+  });
+}
+
+/* ---- Agent usage, activity and connection -------------------------------- */
+
+/**
+ * @typedef {object} AgentUsage
+ * @property {string} date  Local date, `YYYY-MM-DD`. Usage resets when the date changes.
+ * @property {number} used  Threads fetched and searches made by agents that day.
+ */
+
+/**
+ * @typedef {object} AgentLogEntry
+ * @property {number} time
+ * @property {string} client   The agent's name, e.g. `claude-code`.
+ * @property {string} action   e.g. `export_threads`.
+ * @property {string} summary  One line for the activity list.
+ * @property {boolean} ok
+ */
+
+/**
+ * @typedef {object} AgentConnection
+ * @property {'off' | 'waiting' | 'connected'} state
+ * @property {string[]} agents  Names of the agent sessions using the bridge.
+ */
+
+const AGENT_USAGE_KEY = 'agentUsage';
+const AGENT_LOG_KEY = 'agentLog';
+const AGENT_CONNECTION_KEY = 'agentConnection';
+const AGENT_LOG_SIZE = 50;
+
+/** @type {AgentConnection} */
+export const OFF_CONNECTION = Object.freeze({ state: 'off', agents: [] });
+
+/**
+ * Today's local date as `YYYY-MM-DD`.
+ *
+ * @param {Date} [now]
+ */
+export function localDate(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/** @returns {Promise<AgentUsage>} */
+export async function getAgentUsage() {
+  const { [AGENT_USAGE_KEY]: usage } = await chrome.storage.local.get(AGENT_USAGE_KEY);
+  const today = localDate();
+  return usage?.date === today ? usage : { date: today, used: 0 };
+}
+
+/**
+ * Adds to today's agent usage.
+ *
+ * @param {number} count
+ * @returns {Promise<AgentUsage>}
+ */
+export async function addAgentUsage(count) {
+  const usage = await getAgentUsage();
+  const updated = { date: usage.date, used: usage.used + count };
+  await chrome.storage.local.set({ [AGENT_USAGE_KEY]: updated });
+  return updated;
+}
+
+/** @returns {Promise<AgentLogEntry[]>} Newest first. */
+export async function getAgentLog() {
+  const { [AGENT_LOG_KEY]: log = [] } = await chrome.storage.local.get(AGENT_LOG_KEY);
+  return log;
+}
+
+/** @param {Omit<AgentLogEntry, 'time'>} entry */
+export async function addAgentLogEntry(entry) {
+  const log = await getAgentLog();
+  await chrome.storage.local.set({ [AGENT_LOG_KEY]: [{ time: Date.now(), ...entry }, ...log].slice(0, AGENT_LOG_SIZE) });
+}
+
+/** @param {AgentConnection} connection */
+export async function setAgentConnection(connection) {
+  await chrome.storage.session.set({ [AGENT_CONNECTION_KEY]: connection });
+}
+
+/** @returns {Promise<AgentConnection>} */
+export async function getAgentConnection() {
+  const { [AGENT_CONNECTION_KEY]: connection } = await chrome.storage.session.get(AGENT_CONNECTION_KEY);
+  return connection ?? OFF_CONNECTION;
+}
+
+/**
+ * Calls `listener` when agent usage, the activity log or the connection changes.
+ *
+ * @param {(change: { usage?: AgentUsage, log?: AgentLogEntry[], connection?: AgentConnection }) => void} listener
+ */
+export function onAgentStateChanged(listener) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes[AGENT_USAGE_KEY]) listener({ usage: changes[AGENT_USAGE_KEY].newValue });
+    if (area === 'local' && changes[AGENT_LOG_KEY]) listener({ log: changes[AGENT_LOG_KEY].newValue ?? [] });
+    if (area === 'session' && changes[AGENT_CONNECTION_KEY]) listener({ connection: changes[AGENT_CONNECTION_KEY].newValue ?? OFF_CONNECTION });
   });
 }

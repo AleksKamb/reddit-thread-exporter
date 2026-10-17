@@ -11,7 +11,19 @@
 import { openApp } from '../lib/app-tab.js';
 import { EXPORT_FORMATS } from '../lib/formatters.js';
 import { cleanTabTitle, extractThreadLinks, parseThreadLink, refKey, slugToTitle } from '../lib/reddit-links.js';
-import { addToQueue, getQueue, getRunStatus, getSettings, onQueueChanged, onRunStatusChanged, saveSettings } from '../lib/store.js';
+import {
+  addToQueue,
+  getAgentConnection,
+  getQueue,
+  getRunStatus,
+  getSettings,
+  IDLE_RUN_STATUS,
+  onAgentStateChanged,
+  onQueueChanged,
+  onRunStatusChanged,
+  onSettingsChanged,
+  saveSettings,
+} from '../lib/store.js';
 import { applyTheme, createIcon, fillAvatar, plural, setIcon } from '../shared/ui.js';
 
 /** @typedef {import('../lib/store.js').QueueItem} QueueItem */
@@ -60,7 +72,11 @@ const state = {
   /** @type {Settings} */
   settings: /** @type {Settings} */ ({}),
   /** @type {RunStatus} */
-  run: { state: 'idle', finished: 0, total: 0, current: '' },
+  run: IDLE_RUN_STATUS,
+  /** An agent export running in the background worker. @type {RunStatus} */
+  agentRun: IDLE_RUN_STATUS,
+  /** @type {import('../lib/store.js').AgentConnection} */
+  agentConnection: { state: 'off', agents: [] },
   /** The thread open in the current tab, if any. @type {ThreadRef | null} */
   pageThread: null,
 };
@@ -71,7 +87,13 @@ init().catch((error) => {
 });
 
 async function init() {
-  [state.settings, state.queue, state.run] = await Promise.all([getSettings(), getQueue(), getRunStatus()]);
+  [state.settings, state.queue, state.run, state.agentRun, state.agentConnection] = await Promise.all([
+    getSettings(),
+    getQueue(),
+    getRunStatus('page'),
+    getRunStatus('agent'),
+    getAgentConnection(),
+  ]);
   applyTheme(state.settings.theme);
 
   renderFormatChips();
@@ -87,6 +109,19 @@ async function init() {
   onRunStatusChanged((run) => {
     state.run = run;
     renderQueueState();
+  });
+  onRunStatusChanged((run) => {
+    state.agentRun = run;
+    renderQueueState();
+  }, 'agent');
+  onAgentStateChanged(({ connection }) => {
+    if (!connection) return;
+    state.agentConnection = connection;
+    renderAgentBadge();
+  });
+  onSettingsChanged((settings) => {
+    state.settings = settings;
+    renderAgentBadge();
   });
 }
 
@@ -233,14 +268,17 @@ function renderQueueState() {
   ui.statFailedItem.dataset.tone = counts.failed ? 'danger' : '';
   ui.statDoneItem.dataset.tone = counts.done ? 'success' : '';
 
-  // Progress of a running export
+  // Progress of a running export: yours, or an agent's
   const running = isRunning();
-  ui.run.hidden = !running;
-  if (running) {
-    const { finished, total, current } = state.run;
+  const agentRunning = state.agentRun.state !== 'idle';
+  const shown = running ? state.run : agentRunning ? state.agentRun : null;
+  ui.run.hidden = !shown;
+  if (shown) {
+    const { finished, total, current } = shown;
     const percent = total ? Math.round((finished / total) * 100) : 0;
-    const verb = state.run.state === 'paused' ? 'Paused' : state.run.state === 'stopping' ? 'Stopping' : 'Exporting';
-    ui.runTitle.textContent = `${verb} ${finished} of ${total}${current ? ` · ${current}` : ''}`;
+    const who = running ? '' : `${shown.client ?? 'Agent'}: `;
+    const verb = shown.state === 'paused' ? 'Paused' : shown.state === 'stopping' ? 'Stopping' : 'Exporting';
+    ui.runTitle.textContent = `${who}${verb} ${finished} of ${total}${current ? ` · ${current}` : ''}`;
     ui.runProgress.setAttribute('aria-valuenow', String(percent));
     ui.runBar.style.width = `${percent}%`;
   }
@@ -248,19 +286,37 @@ function renderQueueState() {
   // Export button: always says why it can't be used
   const pending = counts.waiting + counts.failed;
   const formatsChosen = Object.values(state.settings.formats ?? {}).some(Boolean);
-  ui.exportButton.disabled = !running && (pending === 0 || !formatsChosen);
+  ui.exportButton.disabled = !running && (agentRunning || pending === 0 || !formatsChosen);
   ui.exportLabel.textContent = running ? 'Show progress' : pending ? `Export ${plural(pending, 'thread')}` : 'Export';
-  ui.exportHint.textContent = running
-    ? ''
-    : !formatsChosen
-      ? 'Choose at least one format.'
-      : pending === 0
-        ? counts.done
-          ? 'Everything is exported. Open the overview to download.'
-          : 'Add a thread to start.'
-        : '';
+  ui.exportHint.textContent = describeExportHint({ running, agentRunning, formatsChosen, pending, done: counts.done });
 
   renderPageThread();
+  renderAgentBadge();
+}
+
+/**
+ * Says why Export can't be pressed, if it can't.
+ *
+ * @param {{ running: boolean, agentRunning: boolean, formatsChosen: boolean, pending: number, done: number }} state
+ */
+function describeExportHint({ running, agentRunning, formatsChosen, pending, done }) {
+  if (running) return '';
+  if (agentRunning) return "An agent is exporting. You can start once it's done.";
+  if (!formatsChosen) return 'Choose at least one format.';
+  if (pending === 0) return done ? 'Everything is exported. Open the overview to download.' : 'Add a thread to start.';
+  return '';
+}
+
+/** Small badge next to the name: is agent access on, connected or busy? */
+function renderAgentBadge() {
+  const badge = /** @type {HTMLElement} */ (document.getElementById('agent-badge'));
+  const enabled = state.settings.agents?.enabled;
+  badge.hidden = !enabled;
+  if (!enabled) return;
+  const busy = state.agentRun.state !== 'idle';
+  const connected = state.agentConnection.state === 'connected';
+  badge.textContent = busy ? 'AI exporting' : connected ? 'AI connected' : 'AI waiting';
+  badge.dataset.tone = busy ? 'accent' : connected ? 'success' : '';
 }
 
 /**

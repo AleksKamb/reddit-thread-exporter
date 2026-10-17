@@ -19,6 +19,7 @@ if (manifest.manifest_version !== 3) problems.push('manifest_version must be 3.'
 if (!/object-src 'none'/.test(manifest.content_security_policy?.extension_pages ?? '')) problems.push("The extension CSP should set object-src 'none'.");
 if (manifest.externally_connectable) problems.push('externally_connectable is set: other sites or extensions could message this one.');
 if (manifest.web_accessible_resources) problems.push('web_accessible_resources is set: websites could load extension files.');
+if (!manifest.key) problems.push('manifest.key is missing: the extension ID would change, and the MCP server only trusts a fixed ID.');
 if (manifest.version !== pkg.version) problems.push(`manifest.json version ${manifest.version} ≠ package.json version ${pkg.version}.`);
 
 const files = [
@@ -27,6 +28,7 @@ const files = [
   manifest.action.default_popup,
   'src/shared/theme.css',
   'src/shared/icons.svg',
+  'src/approve/approve.html',
   ...Object.values(manifest.icons),
   ...Object.values(manifest.action.default_icon),
 ];

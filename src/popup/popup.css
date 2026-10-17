@@ -101,25 +101,6 @@ body {
   padding: 10px 14px 10px 10px;
 }
 
-.orb-mini {
-  width: 32px;
-  height: 32px;
-  flex: none;
-  box-shadow: 0 0 0 3px var(--ring), 0 8px 18px -6px rgb(255 69 0 / 0.7);
-}
-
-.orb-mini .icon {
-  width: 15px;
-  height: 15px;
-  animation: bob 1.6s ease-in-out infinite;
-}
-
-@keyframes bob {
-  50% {
-    transform: translateY(2px);
-  }
-}
-
 .pop-run-text {
   flex: 1;
   min-width: 0;

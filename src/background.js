@@ -3,14 +3,17 @@
  *
  * - Opens the exporter with a welcome message right after install.
  * - Adds "Add to Thread Exporter" to the right-click menu on Reddit links and thread pages.
- * - Shows the number of threads waiting in the queue on the toolbar badge.
+ * - Shows the number of threads waiting in the queue on the toolbar badge, or "AI"
+ *   while an agent is exporting.
+ * - Runs the bridge to the local MCP server when the user allows agents (agent-bridge.js).
  *
  * The toolbar button itself opens the popup (src/popup), not this worker.
  */
 
+import { AgentBridge } from './lib/agent-bridge.js';
 import { openApp } from './lib/app-tab.js';
 import { parseThreadLink } from './lib/reddit-links.js';
-import { addToQueue, getQueue, onQueueChanged } from './lib/store.js';
+import { addToQueue, getQueue, getRunStatus, onQueueChanged, onRunStatusChanged } from './lib/store.js';
 
 const MENU_LINK = 'add-link';
 const MENU_PAGE = 'add-page';
@@ -54,6 +57,9 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
 });
 
 onQueueChanged(updateBadge);
+onRunStatusChanged(async () => updateBadge(await getQueue()), 'agent');
+
+new AgentBridge().start();
 
 /**
  * Shows how many threads still need exporting.
@@ -61,6 +67,11 @@ onQueueChanged(updateBadge);
  * @param {import('./lib/store.js').QueueItem[]} queue
  */
 async function updateBadge(queue) {
+  if ((await getRunStatus('agent')).state !== 'idle') {
+    await chrome.action.setBadgeBackgroundColor({ color: '#FF4500' });
+    await chrome.action.setBadgeText({ text: 'AI' });
+    return;
+  }
   const pending = queue.filter((item) => item.status !== 'done').length;
   await chrome.action.setBadgeBackgroundColor({ color: '#C2410C' });
   await chrome.action.setBadgeText({ text: pending ? String(Math.min(pending, 999)) : '' });

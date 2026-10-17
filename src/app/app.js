@@ -13,11 +13,18 @@ import { cleanTabTitle, extractThreadLinks, parseThreadLink, slugToTitle } from 
 import { RedditTab } from '../lib/reddit-tab.js';
 import {
   addToQueue,
+  getAgentConnection,
+  getAgentLog,
+  getAgentUsage,
   getQueue,
+  getRunStatus,
   getSettings,
   getThreadData,
   IDLE_RUN_STATUS,
+  localDate,
+  onAgentStateChanged,
   onQueueChanged,
+  onRunStatusChanged,
   onSettingsChanged,
   removeFromQueue,
   resetInterruptedItems,
@@ -71,6 +78,25 @@ const ui = {
   optUsernames: /** @type {HTMLInputElement} */ ($('opt-usernames')),
   optAutoDownload: /** @type {HTMLInputElement} */ ($('opt-autodownload')),
   optFileName: /** @type {HTMLInputElement} */ ($('opt-filename')),
+  optBatchSize: /** @type {HTMLSelectElement} */ ($('opt-batch-size')),
+  optBatchPause: /** @type {HTMLSelectElement} */ ($('opt-batch-pause')),
+  agentBadge: $('agent-badge'),
+  agentEnabled: /** @type {HTMLInputElement} */ ($('agent-enabled')),
+  agentConnectionText: $('agent-connection-text'),
+  agentRun: $('agent-run'),
+  agentRunTitle: $('agent-run-title'),
+  agentRunProgress: $('agent-run-progress'),
+  agentRunBar: $('agent-run-bar'),
+  agentUsage: $('agent-usage'),
+  agentUsageCount: $('agent-usage-count'),
+  agentUsageProgress: $('agent-usage-progress'),
+  agentUsageBar: $('agent-usage-bar'),
+  agentSettings: $('agent-settings'),
+  agentDailyLimit: /** @type {HTMLSelectElement} */ ($('agent-daily-limit')),
+  agentMaxRequest: /** @type {HTMLSelectElement} */ ($('agent-max-request')),
+  agentAsk: /** @type {HTMLInputElement} */ ($('agent-ask')),
+  agentPort: /** @type {HTMLInputElement} */ ($('agent-port')),
+  agentActivity: $('agent-activity'),
   runIdle: $('run-idle'),
   runActive: $('run-active'),
   runState: $('run-state'),
@@ -120,6 +146,17 @@ const state = {
   waitTimer: undefined,
   /** Last run status sent to the popup, to avoid redundant writes. */
   publishedStatus: '',
+  /** Agent access, shown in its own card. */
+  agent: {
+    /** @type {import('../lib/store.js').AgentConnection} */
+    connection: { state: 'off', agents: [] },
+    /** @type {import('../lib/store.js').AgentUsage} */
+    usage: { date: '', used: 0 },
+    /** @type {import('../lib/store.js').AgentLogEntry[]} */
+    log: [],
+    /** @type {import('../lib/store.js').RunStatus} */
+    run: IDLE_RUN_STATUS,
+  },
 };
 
 /* ==========================================================================
@@ -139,13 +176,21 @@ async function init() {
 
   await resetInterruptedItems();
   await setRunStatus(IDLE_RUN_STATUS);
-  [state.settings, state.queue] = await Promise.all([getSettings(), getQueue()]);
+  [state.settings, state.queue, state.agent.connection, state.agent.usage, state.agent.log, state.agent.run] = await Promise.all([
+    getSettings(),
+    getQueue(),
+    getAgentConnection(),
+    getAgentUsage(),
+    getAgentLog(),
+    getRunStatus('agent'),
+  ]);
 
   renderTheme(state.settings.theme);
   renderFormatOptions();
   renderSettings();
   renderQueue();
   renderRunPanel();
+  renderAgentAccess();
 
   const params = new URLSearchParams(location.search);
   ui.welcome.hidden = !(params.has('welcome') && !state.settings.welcomeDismissed);
@@ -162,7 +207,18 @@ async function init() {
     renderTheme(settings.theme);
     renderSettings();
     renderRunPanel();
+    renderAgentAccess();
   });
+  // Agent connection, usage, activity and running exports (from the background worker).
+  onAgentStateChanged((change) => {
+    Object.assign(state.agent, change);
+    renderAgentAccess();
+  });
+  onRunStatusChanged((run) => {
+    state.agent.run = run;
+    renderAgentAccess();
+    renderRunPanel();
+  }, 'agent');
   // Commands from the toolbar popup when this tab is already open.
   chrome.runtime.onMessage.addListener((message, sender) => {
     if (isAppCommand(message, sender)) runCommand(message);
@@ -240,6 +296,20 @@ function bindEvents() {
   ui.optUsernames.addEventListener('change', () => updateSettings({ includeUsernames: ui.optUsernames.checked }));
   ui.optAutoDownload.addEventListener('change', () => updateSettings({ autoDownload: ui.optAutoDownload.checked }));
   ui.optFileName.addEventListener('change', () => updateSettings({ fileName: ui.optFileName.value.trim() }));
+  ui.optBatchSize.addEventListener('change', () => updateSettings({ batchSize: Number(ui.optBatchSize.value) }));
+  ui.optBatchPause.addEventListener('change', () => updateSettings({ batchPauseSeconds: Number(ui.optBatchPause.value) }));
+
+  // Agent access
+  ui.agentEnabled.addEventListener('change', () => updateAgentSettings({ enabled: ui.agentEnabled.checked }));
+  ui.agentDailyLimit.addEventListener('change', () => updateAgentSettings({ dailyLimit: Number(ui.agentDailyLimit.value) }));
+  ui.agentMaxRequest.addEventListener('change', () => updateAgentSettings({ maxPerRequest: Number(ui.agentMaxRequest.value) }));
+  ui.agentAsk.addEventListener('change', () => updateAgentSettings({ askBeforeExport: ui.agentAsk.checked }));
+  ui.agentPort.addEventListener('change', () => {
+    const port = Math.round(Number(ui.agentPort.value));
+    if (port >= 1024 && port <= 65535) updateAgentSettings({ port });
+    else ui.agentPort.value = String(state.settings.agents.port);
+  });
+  $('agent-copy').addEventListener('click', copyAgentCommand);
 
   // Running
   ui.start.addEventListener('click', startExport);
@@ -611,6 +681,9 @@ function renderSettings() {
   });
   ui.optSort.value = settings.sort;
   ui.optDelay.value = String(settings.delaySeconds);
+  ui.optBatchSize.value = String(settings.batchSize);
+  ui.optBatchPause.value = String(settings.batchPauseSeconds);
+  ui.optBatchPause.disabled = settings.batchSize === 0;
   ui.optExpand.checked = settings.expandMore;
   ui.optUsernames.checked = settings.includeUsernames;
   ui.optAutoDownload.checked = settings.autoDownload;
@@ -642,6 +715,10 @@ function isRunning() {
 async function startExport() {
   const jobs = state.queue.filter((item) => item.status !== 'done').map((item) => ({ key: item.key, ref: item.ref }));
   if (!jobs.length || isRunning()) return;
+  if (isAgentRunning()) {
+    showNotice('warning', 'An agent is exporting right now.', ['You can start your export as soon as it finishes.']);
+    return;
+  }
 
   const redditTab = new RedditTab();
   const runner = new ExportRunner({
@@ -650,6 +727,8 @@ async function startExport() {
       delaySeconds: state.settings.delaySeconds,
       sort: state.settings.sort,
       expandMore: state.settings.expandMore,
+      batchSize: state.settings.batchSize,
+      batchPauseSeconds: state.settings.batchPauseSeconds,
     },
   });
   state.runner = runner;
@@ -769,14 +848,9 @@ function renderRunPanel() {
 
   // Idle: explain exactly why the button is disabled, if it is.
   ui.startLabel.textContent = pending ? `Export ${plural(pending, 'thread')}` : 'Start export';
-  ui.start.disabled = running || pending === 0;
-  ui.startHint.textContent = !state.queue.length
-    ? 'Add at least one thread to start.'
-    : pending === 0
-      ? 'Every thread in the queue is exported. Add more, or download the files below.'
-      : counts.failed
-        ? `Includes ${plural(counts.failed, 'failed thread')} to retry. About ${estimateDuration(pending)}.`
-        : `About ${estimateDuration(pending)}. You can keep using Chrome meanwhile.`;
+  const agentRunning = isAgentRunning();
+  ui.start.disabled = running || pending === 0 || agentRunning;
+  ui.startHint.textContent = describeStartHint(pending, counts.failed, agentRunning);
 
   // Running
   if (running && state.runner) {
@@ -835,6 +909,21 @@ function renderRunPanel() {
             .join(', ')} · saved to Downloads/${DOWNLOAD_FOLDER}`;
 }
 
+/**
+ * Explains what pressing Export will do, or why it can't be pressed.
+ *
+ * @param {number} pending       Threads that still need exporting.
+ * @param {number} failed        Of those, threads that failed before.
+ * @param {boolean} agentRunning An agent export is in progress.
+ */
+function describeStartHint(pending, failed, agentRunning) {
+  if (agentRunning) return `${state.agent.run.client ?? 'An agent'} is exporting threads. You can start once it's done.`;
+  if (!state.queue.length) return 'Add at least one thread to start.';
+  if (pending === 0) return 'Every thread in the queue is exported. Add more, or download the files below.';
+  if (failed) return `Includes ${plural(failed, 'failed thread')} to retry. About ${estimateDuration(pending)}.`;
+  return `About ${estimateDuration(pending)}. You can keep using Chrome meanwhile.`;
+}
+
 /** Shares the export's progress with the toolbar popup. */
 function publishRunStatus() {
   const runnerState = state.runner?.state;
@@ -864,7 +953,9 @@ function startWaitCountdown() {
       ui.runWaitText.textContent =
         state.run.waitReason === 'rate-limit'
           ? `Reddit asked for a short break. Continuing in ${formatSeconds(seconds)}.`
-          : `Reddit didn't answer. Trying again in ${formatSeconds(seconds)}.`;
+          : state.run.waitReason === 'batch'
+            ? `Batch done. Taking a break, continuing in ${formatSeconds(seconds)}.`
+            : `Reddit didn't answer. Trying again in ${formatSeconds(seconds)}.`;
     }
     if (seconds <= 0) stopWaitCountdown();
   };
@@ -1059,6 +1150,114 @@ function confirmAction({ title, text, confirmLabel }) {
 }
 
 /* ==========================================================================
+   Agent access (MCP)
+   ========================================================================== */
+
+function isAgentRunning() {
+  return state.agent.run.state !== 'idle';
+}
+
+/** @param {Partial<import('../lib/store.js').AgentSettings>} patch */
+async function updateAgentSettings(patch) {
+  await updateSettings({ agents: { ...state.settings.agents, ...patch } });
+}
+
+function renderAgentAccess() {
+  const { agents } = state.settings;
+  const { connection, usage, log, run } = state.agent;
+  const running = run.state !== 'idle';
+  const connected = connection.state === 'connected';
+
+  ui.agentEnabled.checked = agents.enabled;
+  ui.agentSettings.hidden = !agents.enabled;
+  ui.agentUsage.hidden = !agents.enabled;
+
+  // Status badge and the line under the switch
+  const names = connection.agents.length ? connection.agents.join(', ') : '';
+  const [badgeText, tone] = !agents.enabled
+    ? ['Off', '']
+    : running
+      ? ['Exporting', 'accent']
+      : connected
+        ? ['Connected', 'success']
+        : ['Waiting', ''];
+  ui.agentBadge.textContent = badgeText;
+  ui.agentBadge.dataset.tone = tone;
+  ui.agentConnectionText.textContent = !agents.enabled
+    ? "Agents can't use the extension."
+    : connected
+      ? names
+        ? `Connected to the MCP server. In use by ${names}.`
+        : 'Connected to the MCP server. No agent is using it yet.'
+      : `Waiting for the MCP server on port ${agents.port}. Start an agent that has it set up.`;
+
+  // A running agent export
+  ui.agentRun.hidden = !running;
+  if (running) {
+    const percent = run.total ? Math.round((run.finished / run.total) * 100) : 0;
+    ui.agentRunTitle.textContent = `${run.client ?? 'An agent'} is exporting: ${run.finished} of ${plural(run.total, 'item')}`;
+    ui.agentRunProgress.setAttribute('aria-valuenow', String(percent));
+    ui.agentRunBar.style.width = `${percent}%`;
+  }
+
+  // Today's usage
+  const used = usage.date === localDate() ? usage.used : 0;
+  const percent = Math.min(100, Math.round((used / agents.dailyLimit) * 100));
+  ui.agentUsageCount.textContent = `${used} of ${agents.dailyLimit}`;
+  ui.agentUsage.dataset.tone = used >= agents.dailyLimit ? 'full' : '';
+  ui.agentUsageProgress.setAttribute('aria-valuenow', String(percent));
+  ui.agentUsageBar.style.width = `${percent}%`;
+
+  // Settings
+  ui.agentDailyLimit.value = String(agents.dailyLimit);
+  ui.agentMaxRequest.value = String(agents.maxPerRequest);
+  ui.agentAsk.checked = agents.askBeforeExport;
+  if (document.activeElement !== ui.agentPort) ui.agentPort.value = String(agents.port);
+
+  // Recent activity, newest first
+  ui.agentActivity.replaceChildren(
+    ...log.slice(0, 8).map((entry) => {
+      const item = document.createElement('li');
+      item.dataset.ok = String(entry.ok);
+      const dot = document.createElement('span');
+      dot.className = 'activity-dot';
+      dot.setAttribute('aria-label', entry.ok ? 'Succeeded' : 'Failed or denied');
+      const text = document.createElement('span');
+      text.className = 'activity-text';
+      const client = document.createElement('span');
+      client.className = 'activity-client';
+      client.textContent = `${entry.client}: `;
+      text.append(client, document.createTextNode(entry.summary));
+      const time = document.createElement('time');
+      time.dateTime = new Date(entry.time).toISOString();
+      time.textContent = formatActivityTime(entry.time);
+      item.append(dot, text, time);
+      return item;
+    }),
+  );
+}
+
+async function copyAgentCommand() {
+  const command = $('agent-command').textContent ?? '';
+  try {
+    await navigator.clipboard.writeText(command);
+    setIcon($('agent-copy'), 'i-check');
+    setTimeout(() => setIcon($('agent-copy'), 'i-copy'), 1500);
+  } catch (error) {
+    showNotice('error', 'Could not copy to the clipboard.', [String(error?.message ?? error)]);
+  }
+}
+
+/** @param {number} time */
+function formatActivityTime(time) {
+  const date = new Date(time);
+  const sameDay = date.toDateString() === new Date().toDateString();
+  return sameDay
+    ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+/* ==========================================================================
    Help, welcome and theme
    ========================================================================== */
 
@@ -1132,8 +1331,10 @@ function countByStatus(queue) {
  * @param {number} threadCount
  */
 function estimateDuration(threadCount) {
-  const perThread = state.settings.delaySeconds + 1 + (state.settings.expandMore ? 2 * (state.settings.delaySeconds + 1) : 0);
-  const seconds = threadCount * perThread;
+  const { delaySeconds, expandMore, batchSize, batchPauseSeconds } = state.settings;
+  const perThread = delaySeconds + 1 + (expandMore ? 2 * (delaySeconds + 1) : 0);
+  const batchBreaks = batchSize > 0 ? Math.floor((threadCount - 1) / batchSize) * batchPauseSeconds : 0;
+  const seconds = threadCount * perThread + batchBreaks;
   return seconds < 60 ? `${Math.max(5, Math.round(seconds / 5) * 5)} seconds` : `${Math.round(seconds / 60)} min`;
 }
 

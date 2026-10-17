@@ -993,12 +993,6 @@ body {
   animation: bob 1.6s ease-in-out infinite;
 }
 
-@keyframes bob {
-  50% {
-    transform: translateY(3px);
-  }
-}
-
 .ring {
   position: absolute;
   left: 50%;
@@ -1246,6 +1240,176 @@ body {
 
 .log-list [data-level="error"] {
   color: var(--danger);
+}
+
+/* ---- Agent access ------------------------------------------------------- */
+
+.step-icon .icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.4;
+}
+
+#agent-card .card-head .badge {
+  margin-top: 4px;
+}
+
+.agent-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.agent-switch {
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 18px;
+  cursor: pointer;
+}
+
+.agent-switch .switch-track {
+  margin-top: 0;
+}
+
+.agent-run {
+  padding: 10px 14px 10px 10px;
+}
+
+.agent-run-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.agent-run-title {
+  font-weight: 560;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.agent-usage {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.agent-usage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.agent-usage-head .label {
+  margin: 0;
+}
+
+.agent-usage-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.agent-usage[data-tone="full"] .agent-usage-count {
+  color: var(--danger);
+}
+
+.agent-settings {
+  display: grid;
+  gap: 14px;
+  margin: 2px 8px 6px;
+}
+
+.agent-settings > .hint {
+  margin-top: -6px;
+}
+
+.setup-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.command {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.command code {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.port-field .input {
+  max-width: 200px;
+}
+
+.agent-activity {
+  display: grid;
+  gap: 2px;
+}
+
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.activity-list:empty::before {
+  content: "No agent requests yet.";
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.activity-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 13px;
+}
+
+.activity-list .activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.activity-list [data-ok="false"] .activity-dot {
+  background: var(--danger);
+}
+
+.activity-list .activity-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.activity-list .activity-client {
+  font-weight: 560;
+}
+
+.activity-list time {
+  color: var(--text-subtle);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 /* ---- Dialogs ------------------------------------------------------------ */

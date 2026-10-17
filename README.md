@@ -13,7 +13,7 @@ Paste links or drop a CSV, press Export, and the files land in your Downloads fo
 [![No dependencies](https://img.shields.io/badge/runtime%20dependencies-0-15803d)](package.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-57534e)](LICENSE)
 
-[Install](#install) · [How to use it](#how-to-use-it) · [Formats](#export-formats) · [How it works](#how-it-works) · [Privacy](#privacy-and-permissions) · [Development](#development)
+[Install](#install) · [How to use it](#how-to-use-it) · [Formats](#export-formats) · [How it works](#how-it-works) · [Security](#privacy-security-and-permissions) · [Development](#development)
 
 <img src="docs/images/screenshot-light.png" alt="The exporter page: thread links added on the left, seven threads exported in the queue, and the export panel with Markdown, CSV and JSON selected on the right." width="900" />
 
@@ -27,31 +27,35 @@ Thread Exporter does it from inside your own browser, the same way reddit.com lo
 
 ## Features
 
-- **Add threads any way you like.** Paste links, drop a CSV or text file (links are found in any column), tick open Reddit tabs, or right-click any thread link on Reddit.
+- **Add threads any way you like.** Paste links, drop a CSV or text file (links are found in any column), tick open Reddit tabs, right-click any thread link on Reddit, or add the thread you're reading from the toolbar popup.
+- **Quick settings in the toolbar.** The popup shows your queue and live progress, adds the current thread in one click, and has the most-used settings, with a link to the full overview.
 - **Understands every Reddit link.** Full URLs, `old.` / `new.` / mobile links, comment permalinks, `redd.it` short links, app share links (`/r/…/s/…`) and bare `/r/…/comments/…` paths. Duplicates are skipped and non-thread links are flagged.
 - **Four formats.** Readable Markdown with nested replies, an Excel-ready CSV, a clean JSON tree, and Reddit's raw JSON. Or one click to copy the Markdown.
 - **Polite and resilient.** One request at a time with a pause in between. Waits out rate limits on its own, retries temporary errors, and tells you exactly why a thread failed.
 - **Never loses work.** Pause, resume or stop at any time. Finished threads are saved as they complete and survive a closed tab.
 - **Optional extras.** Load the replies hidden behind "load more replies", choose the comment order, include usernames (off by default).
-- **Private by design.** No server, no analytics, no tracking. It only talks to reddit.com.
+- **Private and locked down.** No server, no analytics, no tracking. It only talks to reddit.com, runs under a strict content security policy, and protects CSV exports against formula injection.
 - **Built-in help**, light and dark themes, keyboard support, and a layout that works in a narrow window.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/screenshot-exporting.png" alt="An export in progress: 3 of 8 threads done, with a notice that Reddit asked for a short break and the export continues in 7 seconds." /></td>
+    <td width="50%"><img src="docs/images/screenshot-popup.png" alt="The toolbar popup in light and dark mode: the current thread with an Add button, queue counts, a paste field, format chips, comment order and pause, and a large Export button." /></td>
+    <td width="50%"><img src="docs/images/screenshot-running.png" alt="An export in progress: a glowing orb with rings and an Exporting label, 2 of 7 threads done, with Pause and Stop buttons." /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>The toolbar popup: current thread, queue and quick settings</sub></td>
+    <td align="center"><sub>Live progress; rate limits are waited out for you</sub></td>
+  </tr>
+  <tr>
     <td width="50%"><img src="docs/images/screenshot-help.png" alt="The built-in help dialog with a topic list on the left and the quick start steps on the right." /></td>
+    <td width="50%"><img src="docs/images/screenshot-dark.png" alt="The exporter page in dark mode." /></td>
   </tr>
   <tr>
-    <td align="center"><sub>Rate limits are handled for you, with a live countdown</sub></td>
     <td align="center"><sub>Built-in help covers every option and common problems</sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/images/screenshot-dark.png" alt="The same page in dark mode." /></td>
-    <td width="50%" align="center"><img src="docs/images/screenshot-mobile.png" alt="The queue on a narrow screen, in light and dark mode." width="78%" /></td>
-  </tr>
-  <tr>
     <td align="center"><sub>Follows your system's dark mode, or pick a theme</sub></td>
-    <td align="center"><sub>Works in a narrow window or side panel</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/images/screenshot-mobile.png" alt="The queue on a narrow screen, in light and dark mode." width="48%" /><br /><sub>Works in a narrow window or side panel</sub></td>
   </tr>
 </table>
 
@@ -61,7 +65,7 @@ The extension works in Chrome 116 or newer, and in other Chromium browsers (Edge
 
 **From a release (no tools needed)**
 
-1. Download `reddit-thread-exporter-v1.0.0.zip` from the [latest release](https://github.com/AleksKamb/reddit-thread-exporter/releases/latest) and unzip it.
+1. Download `reddit-thread-exporter-v1.1.0.zip` from the [latest release](https://github.com/AleksKamb/reddit-thread-exporter/releases/latest) and unzip it.
 2. Open `chrome://extensions` and turn on **Developer mode** (top right).
 3. Click **Load unpacked** and select the unzipped folder.
 4. Pin the extension from the puzzle-piece menu so the button is always one click away.
@@ -76,10 +80,12 @@ Then follow steps 2–4 above and select the cloned folder. No build step is nee
 
 ## How to use it
 
-1. **Open the exporter** by clicking the toolbar button. On first install it opens by itself.
+1. **Open the exporter.** Click the toolbar button for the quick popup, then **Open overview** for the full page. On first install the page opens by itself.
 2. **Add threads.** Paste links into the box and press **Add to queue** (or <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd>). You can also upload a file, pick from your open tabs, or right-click a thread link on Reddit and choose **Add thread to Thread Exporter**.
 3. **Pick formats** in the Export panel. Markdown and JSON are on by default.
 4. **Press Export.** Threads are fetched one by one. When the queue is done, the files are saved to `Downloads/Reddit Thread Exporter/`.
+
+**From the toolbar popup** you can do the quick things without opening the page: add the thread you're reading, paste a link, change formats and options, and press **Export**. The export then runs in the overview page, and the popup shows its progress.
 
 If you're not logged in to Reddit, or Reddit wants to check your browser, open reddit.com once in a normal tab first. The help page (**Help** in the top bar, or <kbd>?</kbd>) covers every option and the common problems.
 
@@ -138,13 +144,22 @@ flowchart LR
 
 The parts that don't need Chrome (link parsing, the runner, the thread model and the formatters) are plain functions with unit tests. The details, including the design decisions, are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Privacy and permissions
+## Privacy, security and permissions
 
 Everything happens in your browser. There is no server, and the extension sends nothing anywhere except the requests to reddit.com for the threads you added. Usernames are left out of exports unless you turn them on. Full details: [PRIVACY.md](PRIVACY.md).
 
+Reddit content and uploaded files are treated as untrusted input:
+
+- Text from Reddit is only ever displayed as text, never as HTML (enforced by ESLint).
+- Extension pages run under a strict content security policy and can't be loaded or messaged by websites.
+- CSV exports are protected against formula injection, and exported links can only point to reddit.com threads or ordinary web pages.
+- Look-alike domains are rejected, uploads are size-limited, and link scanning can't be slowed down by crafted files.
+
+The threat model and how to report a vulnerability are in [SECURITY.md](SECURITY.md).
+
 | Permission | Why it's needed |
 | --- | --- |
-| Read and change data on reddit.com | Runs the thread request inside a reddit.com tab |
+| Read and change data on www., old. and new.reddit.com | Runs the thread request inside a reddit.com tab, and lets the popup offer the thread you're viewing |
 | `scripting` | Injects that one request function into the tab |
 | `storage`, `unlimitedStorage` | Keeps your queue, settings and exported threads on your computer |
 | `downloads` | Saves the files to your Downloads folder |
@@ -179,21 +194,24 @@ reddit-thread-exporter/
 ├── _locales/en/             Extension name and description
 ├── icons/                   Toolbar and store icons (drawn by scripts/make-icons.py)
 ├── src/
-│   ├── background.js        Toolbar button, right-click menu, badge
+│   ├── background.js        Right-click menu, badge, first-run page
 │   ├── app/                 The exporter page: index.html, app.css, app.js
+│   ├── popup/               The toolbar popup with quick settings
+│   ├── shared/              Theme tokens and components, icon sprite, DOM helpers
 │   └── lib/
 │       ├── reddit-links.js  Recognises and extracts Reddit links
 │       ├── export-runner.js Queue processing, pacing, retries, pause/stop
 │       ├── thread-model.js  Normalizes Reddit's JSON into a comment tree
 │       ├── formatters.js    Markdown, CSV and JSON output
 │       ├── reddit-tab.js    Runs requests inside a reddit.com tab
-│       └── store.js         chrome.storage: queue, settings, saved threads
+│       ├── app-tab.js       Opens/focuses the exporter and passes it commands
+│       └── store.js         chrome.storage: queue, settings, saved threads, progress
 ├── test/                    Unit tests with made-up Reddit fixtures
 ├── scripts/                 Manifest check, packaging, icon generator
 └── docs/                    Architecture, output formats, images
 ```
 
-Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 

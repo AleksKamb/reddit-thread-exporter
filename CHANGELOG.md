@@ -4,6 +4,28 @@ All notable changes to this project are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-10-17
+
+### Added
+
+- **Toolbar popup** with quick settings: add the thread in the current tab, paste links, see queue counts and live export progress, change formats, comment order, pause, hidden replies and usernames, then export or open the overview.
+- Commands from the popup reach an open exporter tab directly (start the export, open the help).
+- `SECURITY.md` with the threat model and how to report a vulnerability, and Dependabot for dependency updates.
+
+### Changed
+
+- New look: airy cards, soft tinted panels, floating pills, a glowing progress orb and gradient buttons in Reddit orange. Shared theme and icon sprite for the page and the popup.
+- Queue rows show a subreddit avatar and the comment count; formats are picked from icon tiles.
+- Host access narrowed to `www.`, `old.` and `new.reddit.com`.
+
+### Security
+
+- CSV exports neutralise cells that spreadsheets would run as formulas.
+- Links in exports are restricted to reddit.com permalinks and `http`/`https` link posts.
+- Strict content security policy for extension pages; ESLint now forbids `innerHTML`, `eval` and similar.
+- Bounded link-scanning patterns so huge or hostile files can't freeze the page.
+- A minimum pause between requests is enforced regardless of stored settings.
+
 ## [1.0.0] - 2026-10-17
 
 First public release.

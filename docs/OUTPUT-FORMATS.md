@@ -11,7 +11,7 @@ Meant for reading, note apps (Obsidian, Notion) and AI tools. Replies are nested
 ```markdown
 # Reddit threads
 
-Exported 2026-10-17 with Thread Exporter for Reddit 1.0.0 · 2 threads · 75 comments
+Exported 2026-10-17 with Thread Exporter for Reddit 1.1.0 · 2 threads · 75 comments
 
 ## Contents
 
@@ -40,6 +40,8 @@ The post's text…
 
 One row for each post and each comment, in the order they appear on Reddit. UTF-8 with a byte-order mark and CRLF line endings, so Excel opens it correctly.
 
+Text cells that start with `=`, `+`, `-`, `@`, a tab or a carriage return get a leading `'`, so spreadsheet apps show them as text instead of running them as formulas. Numbers, including negative scores, are left as they are.
+
 | Column | Description |
 | --- | --- |
 | `type` | `post` or `comment` |
@@ -63,7 +65,7 @@ A clean structure that mirrors the Markdown: threads with nested `replies`.
 ```jsonc
 {
   "exportedAt": "2026-10-17T11:10:25.157Z",
-  "exportedWith": "Thread Exporter for Reddit 1.0.0",
+  "exportedWith": "Thread Exporter for Reddit 1.1.0",
   "threadCount": 1,
   "threads": [
     {

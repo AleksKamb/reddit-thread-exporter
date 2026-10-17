@@ -8,6 +8,7 @@ Thread Exporter is a Manifest V3 Chrome extension written in plain JavaScript mo
 flowchart LR
   subgraph Extension
     BG["background.js<br/>service worker"]
+    POP["popup/<br/>toolbar popup"]
     APP["app/index.html + app.js<br/>exporter page"]
     subgraph lib["src/lib (no Chrome APIs except where noted)"]
       LINKS["reddit-links.js<br/>parse & extract links"]
@@ -22,6 +23,9 @@ flowchart LR
   DL[("Downloads folder")]
 
   BG -- "right-click adds" --> STORE
+  POP -- "add · settings" --> STORE
+  POP -- "open / start (app-tab.js)" --> APP
+  APP -- "runStatus" --> POP
   APP --> LINKS --> STORE
   APP --> RUNNER -- "request(path)" --> TAB -- "executeScript: fetch()" --> REDDIT
   RUNNER -- "item-done events" --> APP --> STORE
@@ -30,8 +34,11 @@ flowchart LR
 
 | File | Responsibility | Uses Chrome APIs |
 | --- | --- | --- |
-| `src/background.js` | Toolbar button, right-click menu, badge count, opens the app on install | yes |
+| `src/background.js` | Right-click menu, badge count, opens the exporter on install | yes |
+| `src/popup/popup.js` | Toolbar popup: add the current thread, quick add, queue counts and progress, quick settings | yes |
 | `src/app/app.js` | The exporter page: renders state, handles input, runs exports, saves files | yes |
+| `src/lib/app-tab.js` | Opens or focuses the single exporter tab and passes it a command (start, help) | yes |
+| `src/shared/theme.css`, `icons.svg`, `ui.js` | Design tokens and components, the icon sprite, and small DOM helpers shared by the page and the popup | DOM only |
 | `src/lib/reddit-links.js` | Recognises every Reddit link format and finds links in any text | no |
 | `src/lib/export-runner.js` | Works through the queue with pacing, rate-limit handling, retries, pause and stop | no |
 | `src/lib/thread-model.js` | Turns Reddit's nested `Listing` JSON into a small documented tree | no |
@@ -83,9 +90,11 @@ sequenceDiagram
 
 **Finished work is never lost.** Each thread is saved to `chrome.storage.local` the moment it finishes. Closing the tab, stopping, or a crash keeps everything already exported; items left in `running` go back to `queued` on the next start. Queue writes go through a promise chain so quick successive updates can't overwrite each other.
 
+**The popup delegates, the page works.** A Chrome popup closes the moment it loses focus, so it can't run an export. It edits the same settings and queue in storage, and its Export button opens (or focuses) the exporter page and tells it to start, either with a runtime message (tab already open, sender ID checked) or a `?start=1` parameter (new tab). The page publishes its progress to `chrome.storage.session`, which the popup reads to show a live progress bar.
+
 **Raw data is stored, formats are built on demand.** Storage keeps Reddit's original response. The Markdown, CSV and JSON files are generated at download time, so changing a format option (for example, including usernames) applies to threads exported earlier too.
 
-**Untrusted text stays text.** Titles and comments are only ever written with `textContent`. The extension page uses Chrome's default extension CSP, which blocks inline and remote scripts.
+**Untrusted text stays text.** Titles and comments are only ever written with `textContent`, and ESLint rejects `innerHTML`-style APIs. Extension pages run under a strict CSP (`script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'`). CSV cells are protected against formula injection and exported links are limited to reddit.com permalinks and http(s) URLs. The full threat model is in [SECURITY.md](../SECURITY.md).
 
 ## Storage layout
 
@@ -96,6 +105,12 @@ sequenceDiagram
 | `queue` | `QueueItem[]`: `{ key, ref, title, subreddit, status, error, comments, addedAt, fetchedAt }` |
 | `settings` | `{ formats, sort, delaySeconds, expandMore, includeUsernames, autoDownload, fileName, theme, welcomeDismissed }` |
 | `thread:<key>` | `{ listing, extraThings }`: Reddit's thread response plus comments loaded from "load more replies" |
+
+`chrome.storage.session` (cleared when the browser restarts):
+
+| Key | Value |
+| --- | --- |
+| `runStatus` | `{ state, finished, total, current }`: progress of the running export, shown in the popup |
 
 ## Reddit endpoints used
 

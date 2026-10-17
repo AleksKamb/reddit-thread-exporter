@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated: 17 October 2026_
+_Last updated: 17 October 2026 (v1.1.0)_
 
 Thread Exporter for Reddit is a browser extension that exports Reddit threads you choose into files on your computer. It is built to collect as little as possible, and it collects nothing about you.
 
@@ -35,7 +35,7 @@ Exports leave usernames out by default. If you turn on **Include usernames**, au
 
 | Permission | Used for |
 | --- | --- |
-| Access to `reddit.com` | Fetching the threads you added, from a reddit.com tab |
+| Access to `www.`, `old.` and `new.reddit.com` | Fetching the threads you added from a reddit.com tab, and offering the thread you're viewing in the popup |
 | `scripting` | Running that fetch inside the reddit.com tab |
 | `storage`, `unlimitedStorage` | Keeping the queue, settings and downloaded threads on your computer |
 | `downloads` | Saving the exported files to `Downloads/Reddit Thread Exporter/` |

@@ -22,6 +22,8 @@ links) and files you upload. It's built so neither can run code or reach anythin
 | Slow or hostile files | Uploads are capped at 5 MB, and the link scanner uses bounded patterns, so a crafted file can't freeze the page. |
 | Flooding Reddit | One request at a time, a minimum pause enforced in code even if stored settings are tampered with, and Reddit's rate-limit headers are respected. |
 | Over-broad access | Host access is limited to `www.`, `old.` and `new.reddit.com`. The extension never reads cookies, history or other sites. |
+| Websites driving the agent bridge | The MCP hub only listens on `127.0.0.1` and checks the `Host` header (no DNS rebinding). The extension side must present `Origin: chrome-extension://jjgnebbldngnhpdglbfiddkocigddhlb`; agent clients must send no `Origin` at all, which every browser does, so web pages can't connect. |
+| Agents doing more than you allow | Agent access is off by default. The daily limit, per-request limit, pacing, batch breaks and optional approvals are enforced inside the extension, and agents have no tool to change settings. Manual and agent exports never overlap. |
 
 `npm run check` verifies the manifest keeps these settings, and `test/security.test.js` covers the
 input handling.

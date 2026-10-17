@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated: 17 October 2026 (v1.1.0)_
+_Last updated: 17 October 2026 (v1.3.0)_
 
 Thread Exporter for Reddit is a browser extension that exports Reddit threads you choose into files on your computer. It is built to collect as little as possible, and it collects nothing about you.
 
@@ -40,6 +40,11 @@ Exports leave usernames out by default. If you turn on **Include usernames**, au
 | `storage`, `unlimitedStorage` | Keeping the queue, settings and downloaded threads on your computer |
 | `downloads` | Saving the exported files to `Downloads/Reddit Thread Exporter/` |
 | `contextMenus` | The "Add thread to Thread Exporter" right-click item |
+| `alarms` | Checking once a minute for the local MCP server, only while agent access is on |
+
+## AI agents
+
+Agent access is off by default. When you switch it on, the extension connects to an MCP server running on your own computer (`127.0.0.1`), and threads that agents request are passed to that local server and on to the agent you run. Where the agent sends them next depends on that agent (for example, a cloud AI model). Nothing goes to the developer of this extension. Agent requests, their counts and a short activity log are stored locally.
 
 ## Contact
 

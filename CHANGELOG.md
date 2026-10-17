@@ -4,6 +4,20 @@ All notable changes to this project are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-17
+
+### Added
+
+- **Agent access (MCP).** A local MCP server in `mcp/` lets Claude Code, Claude Desktop, Cursor and other MCP clients use the extension: `find_threads`, `export_threads`, `get_exported_threads`, `add_to_queue`, `get_queue` and `get_status`. The extension still does the fetching in your Chrome.
+- **Agent limits you control:** off by default, a daily limit, a limit per request, an optional approval window for every export, an **AI** toolbar badge and progress while an agent works, and a log of agent requests. Agents can't change these settings.
+- **Batch breaks:** a longer pause after every batch of threads (batch size and break length in Options). Applies to manual and agent exports.
+- Reddit search support (`find_threads`).
+
+### Changed
+
+- The extension now has a fixed ID (`jjgnebbldngnhpdglbfiddkocigddhlb`), so the MCP server can trust it. If you loaded an earlier version unpacked, Chrome treats this as a new extension: your old queue and settings stay with the old copy, which you can remove.
+- Manual and agent exports never run at the same time.
+
 ## [1.2.0] - 2026-10-17
 
 ### Added

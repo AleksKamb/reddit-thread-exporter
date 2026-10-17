@@ -15,6 +15,7 @@ git clone https://github.com/AleksKamb/reddit-thread-exporter.git
 cd reddit-thread-exporter
 npm install
 npm run check      # lint + unit tests + manifest check
+npm install --prefix mcp && npm test --prefix mcp   # the MCP server
 ```
 
 Load it in Chrome:

@@ -13,7 +13,7 @@ Paste links or drop a CSV, press Export, and the files land in your Downloads fo
 [![No dependencies](https://img.shields.io/badge/runtime%20dependencies-0-15803d)](package.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-57534e)](LICENSE)
 
-[Install](#install) · [How to use it](#how-to-use-it) · [Formats](#export-formats) · [How it works](#how-it-works) · [Security](#privacy-security-and-permissions) · [Development](#development)
+[Install](#install) · [How to use it](#how-to-use-it) · [Formats](#export-formats) · [AI agents (MCP)](#ai-agents-mcp) · [How it works](#how-it-works) · [Security](#privacy-security-and-permissions) · [Development](#development)
 
 <img src="docs/images/screenshot-light.png" alt="The exporter page: thread links added on the left, seven threads exported in the queue, and the export panel with Markdown, CSV and JSON selected on the right." width="900" />
 
@@ -31,7 +31,8 @@ Thread Exporter does it from inside your own browser, the same way reddit.com lo
 - **Quick settings in the toolbar.** The popup shows your queue and live progress, adds the current thread in one click, takes pasted links, jumps to file upload, and has the most-used settings, with a link to the full overview.
 - **Understands every Reddit link.** Full URLs, `old.` / `new.` / mobile links, comment permalinks, `redd.it` short links, app share links (`/r/…/s/…`) and bare `/r/…/comments/…` paths. Duplicates are skipped and non-thread links are flagged.
 - **Four formats.** Readable Markdown with nested replies, an Excel-ready CSV, a clean JSON tree, and Reddit's raw JSON. Or one click to copy the Markdown.
-- **Polite and resilient.** One request at a time with a pause in between. Waits out rate limits on its own, retries temporary errors, and tells you exactly why a thread failed.
+- **Works with AI agents.** Claude Code, Claude Desktop, Cursor and other MCP clients can search Reddit and export threads through a small local MCP server, within a daily limit you set, with an optional approval for every export.
+- **Polite and resilient.** One request at a time with a pause in between, plus longer breaks between batches. Waits out rate limits on its own, retries temporary errors, and tells you exactly why a thread failed.
 - **Never loses work.** Pause, resume or stop at any time. Finished threads are saved as they complete and survive a closed tab.
 - **Optional extras.** Load the replies hidden behind "load more replies", choose the comment order, include usernames (off by default).
 - **Private and locked down.** No server, no analytics, no tracking. It only talks to reddit.com, runs under a strict content security policy, and protects CSV exports against formula injection.
@@ -65,7 +66,7 @@ The extension works in Chrome 116 or newer, and in other Chromium browsers (Edge
 
 **From a release (no tools needed)**
 
-1. Download `reddit-thread-exporter-v1.2.0.zip` from the [latest release](https://github.com/AleksKamb/reddit-thread-exporter/releases/latest) and unzip it.
+1. Download `reddit-thread-exporter-v1.3.0.zip` from the [latest release](https://github.com/AleksKamb/reddit-thread-exporter/releases/latest) and unzip it.
 2. Open `chrome://extensions` and turn on **Developer mode** (top right).
 3. Click **Load unpacked** and select the unzipped folder.
 4. Pin the extension from the puzzle-piece menu so the button is always one click away.
@@ -127,6 +128,38 @@ The post's text…
 
 Every field of every format is described in [docs/OUTPUT-FORMATS.md](docs/OUTPUT-FORMATS.md).
 
+## AI agents (MCP)
+
+Agents can't click through a browser extension, so Thread Exporter gives them the same abilities through the [Model Context Protocol](https://modelcontextprotocol.io). A small server in [`mcp/`](mcp/) runs on your computer, and the extension does the actual work in your Chrome, with the same pauses and batch breaks as the Export button.
+
+```bash
+cd mcp && npm install
+claude mcp add thread-exporter -- node "$(pwd)/server.js"
+```
+
+Then open the exporter, find **Agent access** and switch on **Allow agents**. Agents get these tools:
+
+| Tool | What it does |
+| --- | --- |
+| `find_threads` | Search Reddit (optionally one subreddit) and list matching threads |
+| `export_threads` | Fetch threads and return Markdown, JSON or CSV; large results are saved to a file |
+| `get_exported_threads` | Read threads you already exported, without new requests |
+| `add_to_queue`, `get_queue` | Stage threads in your queue and check it |
+| `get_status` | Connection, limits and today's usage |
+
+<table>
+  <tr>
+    <td width="62%"><img src="docs/images/screenshot-agents.png" alt="The Agent access card while claude-code exports 3 of 5 threads: connection status, a progress bar, today's usage (4 of 100), the daily and per-request limits, the approval switch and recent agent activity." /></td>
+    <td width="38%" align="center"><img src="docs/images/screenshot-approve.png" alt="The approval window: claude-code asks to fetch 1 thread from Reddit with your browser, with Deny and Allow buttons and a two-minute countdown." /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Agent access: connection, live progress, usage and limits</sub></td>
+    <td align="center"><sub>Optional approval before every agent export</sub></td>
+  </tr>
+</table>
+
+You stay in charge: agent access is off by default, there's a daily limit and a per-request limit, an optional approval window for every export, an **AI** badge on the toolbar while an agent works, and a log of every agent request. Agents can't change any of these settings. Setup for other clients, the limits and the bridge protocol are in [docs/AGENTS.md](docs/AGENTS.md).
+
 ## How it works
 
 Reddit blocks most requests that don't come from a real browser session. So instead of calling Reddit from a server or a script, the extension asks Reddit for each thread **from inside a reddit.com tab**, exactly like Reddit's own page does when it loads comments. If no Reddit tab is open, it opens one in the background and closes it at the end.
@@ -154,6 +187,7 @@ Reddit content and uploaded files are treated as untrusted input:
 - Extension pages run under a strict content security policy and can't be loaded or messaged by websites.
 - CSV exports are protected against formula injection, and exported links can only point to reddit.com threads or ordinary web pages.
 - Look-alike domains are rejected, uploads are size-limited, and link scanning can't be slowed down by crafted files.
+- Agent access is off by default. The MCP bridge only listens on `127.0.0.1`, only accepts this extension's ID and local programs (never websites), and all agent limits are enforced inside the extension.
 
 The threat model and how to report a vulnerability are in [SECURITY.md](SECURITY.md).
 
@@ -164,6 +198,7 @@ The threat model and how to report a vulnerability are in [SECURITY.md](SECURITY
 | `storage`, `unlimitedStorage` | Keeps your queue, settings and exported threads on your computer |
 | `downloads` | Saves the files to your Downloads folder |
 | `contextMenus` | Adds "Add thread to Thread Exporter" to the right-click menu |
+| `alarms` | Checks once a minute whether the local MCP server is running, only while agent access is on |
 
 ## Responsible use
 
@@ -185,6 +220,7 @@ npm install          # ESLint for development
 npm test             # unit tests (Node's built-in test runner)
 npm run lint
 npm run check        # lint + tests + manifest validation
+npm test --prefix mcp  # MCP server tests (after npm install --prefix mcp)
 npm run package      # dist/reddit-thread-exporter-v<version>.zip
 ```
 
@@ -193,10 +229,12 @@ reddit-thread-exporter/
 ├── manifest.json            Manifest V3: permissions, icons, service worker
 ├── _locales/en/             Extension name and description
 ├── icons/                   Toolbar and store icons (drawn by scripts/make-icons.py)
+├── mcp/                     Local MCP server for AI agents (server.js, hub, tools, tests)
 ├── src/
-│   ├── background.js        Right-click menu, badge, first-run page
+│   ├── background.js        Right-click menu, badge, first-run page, agent bridge
 │   ├── app/                 The exporter page: index.html, app.css, app.js
 │   ├── popup/               The toolbar popup with quick settings
+│   ├── approve/             Approval window for agent exports
 │   ├── shared/              Theme tokens and components, icon sprite, DOM helpers
 │   └── lib/
 │       ├── reddit-links.js  Recognises and extracts Reddit links
@@ -205,6 +243,9 @@ reddit-thread-exporter/
 │       ├── formatters.js    Markdown, CSV and JSON output
 │       ├── reddit-tab.js    Runs requests inside a reddit.com tab
 │       ├── app-tab.js       Opens/focuses the exporter and passes it commands
+│       ├── agent-bridge.js  WebSocket connection to the local MCP server
+│       ├── agent-jobs.js    Agent requests: limits, approvals, exports, search
+│       ├── reddit-search.js Reddit search for the find_threads tool
 │       └── store.js         chrome.storage: queue, settings, saved threads, progress
 ├── test/                    Unit tests with made-up Reddit fixtures
 ├── scripts/                 Manifest check, packaging, icon generator
@@ -216,7 +257,8 @@ Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Security issu
 ## Roadmap
 
 - Firefox build (Manifest V3 with `browser.*` APIs)
-- Export a whole subreddit listing or search result, not just single threads
+- Export a whole subreddit listing, not just single threads
+- Publish the MCP server to npm, so `npx thread-exporter-mcp` works without cloning
 - Optional ZIP download with one file per thread
 - Chrome Web Store listing
 

@@ -37,7 +37,12 @@ flowchart LR
 | `src/background.js` | Right-click menu, badge count, opens the exporter on install | yes |
 | `src/popup/popup.js` | Toolbar popup: add the current thread, quick add, queue counts and progress, quick settings | yes |
 | `src/app/app.js` | The exporter page: renders state, handles input, runs exports, saves files | yes |
-| `src/lib/app-tab.js` | Opens or focuses the single exporter tab and passes it a command (start, help) | yes |
+| `src/lib/app-tab.js` | Opens or focuses the single exporter tab and passes it a command (start, help, upload) | yes |
+| `src/lib/agent-bridge.js` | WebSocket connection to the local MCP server, while agent access is on | yes |
+| `src/lib/agent-jobs.js` | Agent requests: limits, approvals, exports, search, queue tools | yes |
+| `src/lib/reddit-search.js` | Builds Reddit search requests and parses results | no |
+| `src/approve/` | The approval window for agent exports | yes |
+| `mcp/` | The local MCP server and hub for AI agents (Node). See [AGENTS.md](AGENTS.md) | Node only |
 | `src/shared/theme.css`, `icons.svg`, `ui.js` | Design tokens and components, the icon sprite, and small DOM helpers shared by the page and the popup | DOM only |
 | `src/lib/reddit-links.js` | Recognises every Reddit link format and finds links in any text | no |
 | `src/lib/export-runner.js` | Works through the queue with pacing, rate-limit handling, retries, pause and stop | no |

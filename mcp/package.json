@@ -1,0 +1,23 @@
+{
+  "name": "thread-exporter-mcp",
+  "version": "1.3.0",
+  "private": true,
+  "description": "Local MCP server that lets AI agents export Reddit threads through the Thread Exporter for Reddit extension.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Alexander Kamburudis",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "thread-exporter-mcp": "server.js"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "ws": "^8.22.0",
+    "zod": "^4.6.7"
+  }
+}

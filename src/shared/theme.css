@@ -1,0 +1,839 @@
+/* ==========================================================================
+   Thread Exporter for Reddit: shared theme
+   Used by the exporter page and the toolbar popup.
+
+   The look: airy white cards with large radii, soft tinted "media" panels,
+   floating white pills, glowing orbs and gradient pill buttons, in Reddit orange.
+   ========================================================================== */
+
+/* ---- Tokens ------------------------------------------------------------- */
+
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Surfaces */
+  --bg: #f2f1ef;
+  --bg-glow-1: rgb(255 69 0 / 0.1);
+  --bg-glow-2: rgb(255 138 80 / 0.12);
+  --surface: #ffffff;
+  --surface-2: #f7f5f3;
+  --surface-3: #eeeae6;
+  --panel-from: #fff7f2;
+  --panel-to: #ffe3d4;
+  --panel-glow: rgb(255 69 0 / 0.16);
+  --panel-dots: rgb(255 69 0 / 0.14);
+  --pill: #ffffff;
+  --pill-border: rgb(255 255 255 / 0.9);
+  --border: rgb(28 25 23 / 0.07);
+  --border-strong: rgb(28 25 23 / 0.16);
+  --ring: #ffffff;
+
+  /* Text */
+  --text: #1a1715;
+  --text-muted: #5e5853;
+  --text-subtle: #6b6560;
+
+  /* Reddit orange. --accent is used for text and icons, the gradients for fills. */
+  --reddit: #ff4500;
+  --accent: #c2410c;
+  --accent-text: #b53a0a;
+  --accent-soft: #fff1e8;
+  --accent-soft-border: #ffd2bb;
+  --accent-gradient: linear-gradient(135deg, #f0541b 0%, #d63a06 52%, #c4380a 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #e04a12 0%, #c4380a 52%, #ad3108 100%);
+  --on-accent: #ffffff;
+  --accent-glow: 0 10px 28px -10px rgb(255 69 0 / 0.75), 0 2px 6px -2px rgb(196 56 10 / 0.5);
+  --orb-gradient: radial-gradient(circle at 32% 28%, #ffb48f 0%, #ff6a2b 38%, #ff4500 62%, #c93508 100%);
+
+  /* Status */
+  --success: #15803d;
+  --success-soft: #ecfdf3;
+  --warning: #a16207;
+  --warning-soft: #fef8e7;
+  --danger: #b91c1c;
+  --danger-hover: #991b1b;
+  --danger-soft: #fef2f2;
+
+  /* Shape and depth */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --shadow-sm: 0 1px 2px rgb(28 25 23 / 0.06);
+  --shadow-pill: 0 1px 1px rgb(28 25 23 / 0.04), 0 6px 18px -6px rgb(120 50 20 / 0.18);
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.04), 0 18px 40px -24px rgb(80 40 20 / 0.22);
+  --shadow-lg: 0 30px 80px -20px rgb(28 25 23 / 0.35);
+  --focus-ring: 0 0 0 3px rgb(255 69 0 / 0.32);
+
+  color-scheme: light;
+}
+
+/* Dark palette: when the system is dark (unless the user picked light), or when the user picked dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0b0a;
+    --bg-glow-1: rgb(255 69 0 / 0.14);
+    --bg-glow-2: rgb(255 120 60 / 0.08);
+    --surface: #161311;
+    --surface-2: #1d1916;
+    --surface-3: #27221e;
+    --panel-from: #2a1a12;
+    --panel-to: #1b1411;
+    --panel-glow: rgb(255 69 0 / 0.22);
+    --panel-dots: rgb(255 120 60 / 0.16);
+    --pill: #221d1a;
+    --pill-border: rgb(255 255 255 / 0.06);
+    --border: rgb(255 255 255 / 0.07);
+    --border-strong: rgb(255 255 255 / 0.16);
+    --ring: #2b2521;
+    --text: #f6f3f0;
+    --text-muted: #bdb5ac;
+    --text-subtle: #a39a90;
+    --accent: #ff7a45;
+    --accent-text: #ff9a6b;
+    --accent-soft: rgb(255 69 0 / 0.14);
+    --accent-soft-border: rgb(255 106 43 / 0.35);
+    --accent-gradient: linear-gradient(135deg, #ff8a50 0%, #ff5a1a 55%, #ff4500 100%);
+    --accent-gradient-hover: linear-gradient(135deg, #ff9a66 0%, #ff6a2b 55%, #ff5212 100%);
+    --on-accent: #1a0800;
+    --accent-glow: 0 10px 30px -10px rgb(255 69 0 / 0.8);
+    --success: #4ade80;
+    --success-soft: rgb(74 222 128 / 0.1);
+    --warning: #facc15;
+    --warning-soft: rgb(250 204 21 / 0.1);
+    --danger: #f87171;
+    --danger-hover: #fca5a5;
+    --danger-soft: rgb(248 113 113 / 0.1);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-pill: 0 1px 1px rgb(0 0 0 / 0.3), 0 8px 20px -8px rgb(0 0 0 / 0.6);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 24px 48px -24px rgb(0 0 0 / 0.7);
+    --shadow-lg: 0 30px 80px -20px rgb(0 0 0 / 0.8);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d0b0a;
+  --bg-glow-1: rgb(255 69 0 / 0.14);
+  --bg-glow-2: rgb(255 120 60 / 0.08);
+  --surface: #161311;
+  --surface-2: #1d1916;
+  --surface-3: #27221e;
+  --panel-from: #2a1a12;
+  --panel-to: #1b1411;
+  --panel-glow: rgb(255 69 0 / 0.22);
+  --panel-dots: rgb(255 120 60 / 0.16);
+  --pill: #221d1a;
+  --pill-border: rgb(255 255 255 / 0.06);
+  --border: rgb(255 255 255 / 0.07);
+  --border-strong: rgb(255 255 255 / 0.16);
+  --ring: #2b2521;
+  --text: #f6f3f0;
+  --text-muted: #bdb5ac;
+  --text-subtle: #a39a90;
+  --accent: #ff7a45;
+  --accent-text: #ff9a6b;
+  --accent-soft: rgb(255 69 0 / 0.14);
+  --accent-soft-border: rgb(255 106 43 / 0.35);
+  --accent-gradient: linear-gradient(135deg, #ff8a50 0%, #ff5a1a 55%, #ff4500 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #ff9a66 0%, #ff6a2b 55%, #ff5212 100%);
+  --on-accent: #1a0800;
+  --accent-glow: 0 10px 30px -10px rgb(255 69 0 / 0.8);
+  --success: #4ade80;
+  --success-soft: rgb(74 222 128 / 0.1);
+  --warning: #facc15;
+  --warning-soft: rgb(250 204 21 / 0.1);
+  --danger: #f87171;
+  --danger-hover: #fca5a5;
+  --danger-soft: rgb(248 113 113 / 0.1);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-pill: 0 1px 1px rgb(0 0 0 / 0.3), 0 8px 20px -8px rgb(0 0 0 / 0.6);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 24px 48px -24px rgb(0 0 0 / 0.7);
+  --shadow-lg: 0 30px 80px -20px rgb(0 0 0 / 0.8);
+  color-scheme: dark;
+}
+
+/* ---- Base --------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font: 400 15px/1.55 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(1100px 520px at 12% -12%, var(--bg-glow-1), transparent 62%),
+    radial-gradient(900px 480px at 100% -8%, var(--bg-glow-2), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 560;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accent-text);
+  text-underline-offset: 2px;
+}
+
+code,
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+
+code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.05em 0.4em;
+  overflow-wrap: anywhere;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.7em;
+  padding: 0.05em 0.45em;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--surface);
+  text-align: center;
+  line-height: 1.4;
+}
+
+:focus-visible {
+  outline: 2px solid var(--reddit);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-sm {
+  width: 15px;
+  height: 15px;
+}
+
+.icon-xl {
+  width: 34px;
+  height: 34px;
+  stroke-width: 1.6;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.hint {
+  color: var(--text-subtle);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.center {
+  text-align: center;
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+
+.btn {
+  --btn-bg: transparent;
+  --btn-fg: var(--text);
+  --btn-border: transparent;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--btn-border);
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: 560 14px/1 var(--font-sans);
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.08s ease;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.995);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.btn-primary {
+  --btn-fg: var(--on-accent);
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-glow), inset 0 1px 0 rgb(255 255 255 / 0.22);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-gradient-hover);
+}
+
+.btn-primary:focus-visible {
+  box-shadow: var(--accent-glow), var(--focus-ring);
+}
+
+.btn-secondary {
+  --btn-bg: var(--pill);
+  --btn-border: var(--border);
+  box-shadow: var(--shadow-pill);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  --btn-border: var(--border-strong);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  --btn-bg: var(--surface-2);
+}
+
+.btn-danger {
+  --btn-bg: var(--danger);
+  --btn-fg: #ffffff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  --btn-bg: var(--danger-hover);
+}
+
+:root[data-theme="dark"] .btn-danger {
+  --btn-fg: #1f0505;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .btn-danger {
+    --btn-fg: #1f0505;
+  }
+}
+
+.btn-danger-text {
+  --btn-fg: var(--danger);
+}
+
+.btn-sm {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.btn-lg {
+  min-height: 52px;
+  padding: 0 24px;
+  font-size: 15.5px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn .sparkle {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  stroke: none;
+  opacity: 0.95;
+}
+
+/* Round icon chips with a white ring, like app icons floating on a panel. */
+.icon-btn {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--pill);
+  color: var(--text);
+  box-shadow: var(--shadow-pill), 0 0 0 3px var(--ring);
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, transform 0.08s ease, color 0.18s ease;
+  text-decoration: none;
+}
+
+.icon-btn:hover {
+  color: var(--accent-text);
+}
+
+.icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-pill), 0 0 0 3px var(--ring), 0 0 0 6px rgb(255 69 0 / 0.32);
+}
+
+.icon-btn:active {
+  transform: translateY(1px);
+}
+
+.icon-btn-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.icon-btn-sm .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-btn-plain {
+  box-shadow: none;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-subtle);
+}
+
+.icon-btn-plain:hover {
+  background: var(--surface-2);
+}
+
+/* ---- Form controls ------------------------------------------------------ */
+
+.label {
+  display: block;
+  font-weight: 560;
+  font-size: 13.5px;
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+.input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--pill);
+  color: var(--text);
+  font: 400 14px/1.5 var(--font-sans);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input::placeholder {
+  color: var(--text-subtle);
+  opacity: 0.85;
+}
+
+.input:hover {
+  border-color: var(--text-subtle);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--reddit);
+  box-shadow: var(--focus-ring);
+}
+
+.select {
+  appearance: none;
+  padding-right: 34px;
+  border-radius: 999px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 52%, calc(100% - 13px) 52%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+/* A white pill field floating on a tinted panel, with its action button inside. */
+.field-pill {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 8px 8px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--pill);
+  border: 1px solid var(--pill-border);
+  box-shadow: var(--shadow-pill);
+  transition: box-shadow 0.15s ease;
+}
+
+.field-pill:focus-within {
+  box-shadow: var(--shadow-pill), var(--focus-ring);
+}
+
+.field-pill > textarea,
+.field-pill > input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: 400 14px/1.6 var(--font-sans);
+  padding: 6px 0;
+  resize: none;
+}
+
+.field-pill > textarea:focus,
+.field-pill > input:focus {
+  outline: none;
+}
+
+.field-pill > textarea::placeholder,
+.field-pill > input::placeholder {
+  color: var(--text-subtle);
+}
+
+/* Switch */
+.switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.switch-track {
+  flex: none;
+  position: relative;
+  width: 38px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  transition: transform 0.2s ease;
+}
+
+.switch input:checked + .switch-track {
+  background: var(--accent-gradient);
+  border-color: transparent;
+}
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(16px);
+}
+
+.switch input:focus-visible + .switch-track {
+  box-shadow: var(--focus-ring);
+}
+
+.switch-text {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 540;
+}
+
+.switch-text .hint {
+  font-weight: 400;
+}
+
+/* Toggle chips (checkbox pills) */
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--pill);
+  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  font-weight: 560;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.chip input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.chip .chip-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.chip .chip-check .icon {
+  width: 11px;
+  height: 11px;
+  stroke-width: 3;
+  color: var(--on-accent);
+  opacity: 0;
+}
+
+.chip:has(input:checked) {
+  border-color: var(--accent-soft-border);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.chip:has(input:checked) .chip-check {
+  background: var(--accent-gradient);
+  border-color: transparent;
+}
+
+.chip:has(input:checked) .chip-check .icon {
+  opacity: 1;
+}
+
+.chip:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- Panels, pills, avatars, orbs ---------------------------------------- */
+
+/* The soft tinted area inside a card, with a glow and a faint dot texture. */
+.panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, var(--panel-from), var(--panel-to));
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60% 70% at 50% 110%, var(--panel-glow), transparent 70%),
+    radial-gradient(var(--panel-dots) 1px, transparent 1.2px) 0 0 / 18px 18px;
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.35), #000);
+  pointer-events: none;
+}
+
+.pill-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 10px;
+  border-radius: 18px;
+  background: var(--pill);
+  border: 1px solid var(--pill-border);
+  box-shadow: var(--shadow-pill);
+}
+
+.avatar {
+  --avatar-from: #ff8a50;
+  --avatar-to: #ff4500;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(140deg, var(--avatar-from), var(--avatar-to));
+  color: #ffffff;
+  font-weight: 650;
+  font-size: 14px;
+  box-shadow: 0 0 0 3px var(--ring), 0 6px 14px -6px rgb(255 69 0 / 0.6);
+  text-transform: uppercase;
+}
+
+.avatar .icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.4;
+}
+
+/* A glowing sphere: the visual anchor for "something is happening". */
+.orb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--orb-gradient);
+  color: #ffffff;
+  box-shadow:
+    0 0 0 6px rgb(255 255 255 / 0.55),
+    0 0 0 7px rgb(255 69 0 / 0.18),
+    0 14px 36px -8px rgb(255 69 0 / 0.75),
+    inset 0 -6px 14px rgb(140 30 0 / 0.35),
+    inset 0 6px 12px rgb(255 255 255 / 0.35);
+}
+
+:root[data-theme="dark"] .orb {
+  box-shadow:
+    0 0 0 6px rgb(255 255 255 / 0.06),
+    0 0 0 7px rgb(255 69 0 / 0.28),
+    0 14px 40px -6px rgb(255 69 0 / 0.8),
+    inset 0 -6px 14px rgb(140 30 0 / 0.35),
+    inset 0 6px 12px rgb(255 255 255 / 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .orb {
+    box-shadow:
+      0 0 0 6px rgb(255 255 255 / 0.06),
+      0 0 0 7px rgb(255 69 0 / 0.28),
+      0 14px 40px -6px rgb(255 69 0 / 0.8),
+      inset 0 -6px 14px rgb(140 30 0 / 0.35),
+      inset 0 6px 12px rgb(255 255 255 / 0.3);
+  }
+}
+
+.orb .icon {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.4;
+  filter: drop-shadow(0 1px 2px rgb(120 30 0 / 0.4));
+}
+
+/* Status pill */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 560;
+  line-height: 1.75;
+  white-space: nowrap;
+}
+
+.badge[data-tone="accent"] {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-color: var(--accent-soft-border);
+}
+
+.badge[data-tone="success"] {
+  color: var(--success);
+  background: var(--success-soft);
+  border-color: color-mix(in srgb, var(--success) 25%, transparent);
+}
+
+.badge[data-tone="danger"] {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 25%, transparent);
+}
+
+/* Progress */
+.progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff8a50, var(--reddit));
+  box-shadow: 0 0 12px rgb(255 69 0 / 0.6);
+  transition: width 0.4s ease;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,15 +1,17 @@
 /**
  * Background service worker.
  *
- * - Opens the exporter (or focuses it) when the toolbar button is clicked.
+ * - Opens the exporter with a welcome message right after install.
  * - Adds "Add to Thread Exporter" to the right-click menu on Reddit links and thread pages.
  * - Shows the number of threads waiting in the queue on the toolbar badge.
+ *
+ * The toolbar button itself opens the popup (src/popup), not this worker.
  */
 
+import { openApp } from './lib/app-tab.js';
 import { parseThreadLink } from './lib/reddit-links.js';
 import { addToQueue, getQueue, onQueueChanged } from './lib/store.js';
 
-const APP_PATH = 'src/app/index.html';
 const MENU_LINK = 'add-link';
 const MENU_PAGE = 'add-page';
 
@@ -42,8 +44,6 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
 
 chrome.runtime.onStartup.addListener(async () => updateBadge(await getQueue()));
 
-chrome.action.onClicked.addListener(() => openApp());
-
 chrome.contextMenus.onClicked.addListener(async (info) => {
   const url = info.menuItemId === MENU_LINK ? info.linkUrl : info.pageUrl;
   const ref = url ? parseThreadLink(url) : null;
@@ -54,23 +54,6 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
 });
 
 onQueueChanged(updateBadge);
-
-/**
- * Focuses the exporter tab if it is open, otherwise opens it.
- *
- * @param {{ welcome?: boolean }} [options]
- */
-async function openApp({ welcome = false } = {}) {
-  const appUrl = chrome.runtime.getURL(APP_PATH);
-  const [context] = await chrome.runtime.getContexts({ contextTypes: ['TAB'], documentUrls: [appUrl] });
-
-  if (context && context.tabId >= 0) {
-    await chrome.tabs.update(context.tabId, { active: true });
-    if (context.windowId >= 0) await chrome.windows.update(context.windowId, { focused: true });
-    return;
-  }
-  await chrome.tabs.create({ url: welcome ? `${appUrl}?welcome=1` : appUrl });
-}
 
 /**
  * Shows how many threads still need exporting.

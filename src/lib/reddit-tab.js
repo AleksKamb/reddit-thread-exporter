@@ -12,6 +12,7 @@
 /** @typedef {import('./export-runner.js').PageResponse} PageResponse */
 
 const REDDIT_HOME = 'https://www.reddit.com/';
+/** Tabs that can run requests: Reddit sites in host_permissions that serve the JSON API. */
 const REDDIT_TAB_PATTERNS = ['https://www.reddit.com/*', 'https://old.reddit.com/*'];
 const TAB_LOAD_TIMEOUT_MS = 30_000;
 const BROWSER_CHECK_TIMEOUT_MS = 20_000;

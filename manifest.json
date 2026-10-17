@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "Thread Exporter",
   "description": "__MSG_extDescription__",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "default_locale": "en",
   "minimum_chrome_version": "116",
   "homepage_url": "https://github.com/AleksKamb/reddit-thread-exporter",
@@ -15,6 +15,7 @@
   },
   "action": {
     "default_title": "__MSG_actionTitle__",
+    "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png"
@@ -24,6 +25,19 @@
     "service_worker": "src/background.js",
     "type": "module"
   },
-  "permissions": ["storage", "unlimitedStorage", "scripting", "downloads", "contextMenus"],
-  "host_permissions": ["https://*.reddit.com/*"]
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "scripting",
+    "downloads",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://www.reddit.com/*",
+    "https://old.reddit.com/*",
+    "https://new.reddit.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+  }
 }

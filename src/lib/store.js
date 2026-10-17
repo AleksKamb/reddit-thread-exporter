@@ -4,9 +4,11 @@
  * - `queue`     The list of threads and their export status.
  * - `settings`  Export options, remembered between sessions.
  * - `thread:<id>` Downloaded data for one thread, so finished work survives a closed tab.
+ * - `runStatus` (in `chrome.storage.session`) Progress of the export that is running,
+ *   so the toolbar popup can show it. Cleared when the browser restarts.
  *
- * Shared by the app page and the background service worker (which adds threads
- * from the right-click menu).
+ * Shared by the app page, the toolbar popup and the background service worker
+ * (which adds threads from the right-click menu).
  *
  * @module store
  */
@@ -220,4 +222,45 @@ export function createQueueItem(ref) {
     addedAt: Date.now(),
     fetchedAt: null,
   };
+}
+
+/**
+ * @typedef {object} RunStatus
+ * @property {'idle' | 'running' | 'paused' | 'stopping'} state
+ * @property {number} finished
+ * @property {number} total
+ * @property {string} current   Title of the thread being exported.
+ */
+
+const RUN_STATUS_KEY = 'runStatus';
+
+/** @type {RunStatus} */
+export const IDLE_RUN_STATUS = Object.freeze({ state: 'idle', finished: 0, total: 0, current: '' });
+
+/** @param {RunStatus} status */
+export async function setRunStatus(status) {
+  await chrome.storage.session.set({ [RUN_STATUS_KEY]: status });
+}
+
+/** @returns {Promise<RunStatus>} */
+export async function getRunStatus() {
+  const { [RUN_STATUS_KEY]: status } = await chrome.storage.session.get(RUN_STATUS_KEY);
+  return status ?? IDLE_RUN_STATUS;
+}
+
+/** @param {(status: RunStatus) => void} listener */
+export function onRunStatusChanged(listener) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'session' && changes[RUN_STATUS_KEY]) listener(changes[RUN_STATUS_KEY].newValue ?? IDLE_RUN_STATUS);
+  });
+}
+
+/** @param {(settings: Settings) => void} listener */
+export function onSettingsChanged(listener) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes[SETTINGS_KEY]) {
+      const saved = changes[SETTINGS_KEY].newValue ?? {};
+      listener({ ...DEFAULT_SETTINGS, ...saved, formats: { ...DEFAULT_SETTINGS.formats, ...saved.formats } });
+    }
+  });
 }

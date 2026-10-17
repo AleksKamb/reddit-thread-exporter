@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Thread Exporter</title>
+    <link rel="stylesheet" href="../shared/theme.css" />
+    <link rel="stylesheet" href="popup.css" />
+    <script type="module" src="popup.js"></script>
+  </head>
+  <body>
+    <header class="pop-head">
+      <img src="../../icons/icon-48.png" alt="" width="30" height="30" />
+      <div class="pop-brand">
+        <span class="pop-name">Thread Exporter</span>
+        <span class="pop-sub">for Reddit</span>
+      </div>
+      <button type="button" class="icon-btn icon-btn-sm" id="open-help" aria-label="Help: how Thread Exporter works">
+        <svg class="icon" aria-hidden="true"><use href="../shared/icons.svg#i-help" /></svg>
+      </button>
+      <button type="button" class="icon-btn icon-btn-sm" id="open-app" aria-label="Open the full exporter">
+        <svg class="icon" aria-hidden="true"><use href="../shared/icons.svg#i-layout" /></svg>
+      </button>
+    </header>
+
+    <main class="pop-main">
+      <section class="panel pop-hero" aria-label="Queue">
+        <div class="pill-row current" id="current" hidden>
+          <span class="avatar" id="current-avatar" aria-hidden="true"></span>
+          <div class="current-text">
+            <span class="current-label">This page</span>
+            <span class="current-title" id="current-title"></span>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="current-add">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="../shared/icons.svg#i-plus" /></svg>
+            <span id="current-add-label">Add</span>
+          </button>
+        </div>
+
+        <div class="pill-row pop-run" id="run" hidden>
+          <span class="orb orb-mini" aria-hidden="true"><svg class="icon"><use href="../shared/icons.svg#i-arrow-down" /></svg></span>
+          <div class="pop-run-text">
+            <span class="pop-run-title" id="run-title">Exporting</span>
+            <div class="progress" role="progressbar" aria-label="Export progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="run-progress">
+              <div class="progress-bar" id="run-bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <ul class="stats" aria-label="Queue summary">
+          <li class="stat"><span class="stat-value" id="stat-waiting">0</span><span class="stat-label">Waiting</span></li>
+          <li class="stat" id="stat-done-item"><span class="stat-value" id="stat-done">0</span><span class="stat-label">Exported</span></li>
+          <li class="stat" id="stat-failed-item"><span class="stat-value" id="stat-failed">0</span><span class="stat-label">Failed</span></li>
+        </ul>
+      </section>
+
+      <form class="field-pill quick-add" id="quick-add" autocomplete="off">
+        <label class="visually-hidden" for="quick-input">Reddit thread links</label>
+        <input id="quick-input" type="text" spellcheck="false" placeholder="Paste thread links…" />
+        <button type="submit" class="btn btn-primary btn-sm">
+          Add
+          <svg class="sparkle" aria-hidden="true"><use href="../shared/icons.svg#i-sparkle" /></svg>
+        </button>
+      </form>
+      <p class="add-status hint" id="add-status" role="status"></p>
+
+      <section class="quick-settings" aria-labelledby="qs-title">
+        <h2 class="section-title" id="qs-title">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="../shared/icons.svg#i-sliders" /></svg>
+          Quick settings
+        </h2>
+        <div class="chips" id="formats" role="group" aria-label="Export formats"></div>
+        <div class="field-row">
+          <div class="field">
+            <label class="label" for="opt-sort">Comment order</label>
+            <select class="input select" id="opt-sort">
+              <option value="confidence">Best</option>
+              <option value="top">Top</option>
+              <option value="new">New</option>
+              <option value="controversial">Controversial</option>
+              <option value="old">Old</option>
+              <option value="qa">Q&amp;A</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label" for="opt-delay">Pause</label>
+            <select class="input select" id="opt-delay">
+              <option value="2">2 seconds</option>
+              <option value="3">3 seconds</option>
+              <option value="5">5 seconds</option>
+              <option value="10">10 seconds</option>
+            </select>
+          </div>
+        </div>
+        <div class="switch-row">
+          <label class="switch" title="Also fetch comments behind &quot;load more replies&quot; (slower)">
+            <input type="checkbox" id="opt-expand" />
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-text"><span>Hidden replies</span></span>
+          </label>
+          <label class="switch" title="Add post and comment authors to the export">
+            <input type="checkbox" id="opt-usernames" />
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-text"><span>Usernames</span></span>
+          </label>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pop-foot">
+      <button type="button" class="btn btn-primary btn-lg btn-block" id="export" aria-describedby="export-hint">
+        <span id="export-label">Export</span>
+        <svg class="sparkle" aria-hidden="true"><use href="../shared/icons.svg#i-sparkle" /></svg>
+      </button>
+      <p class="hint center" id="export-hint"></p>
+      <button type="button" class="link-btn" id="open-overview">
+        Open overview
+        <svg class="icon icon-sm" aria-hidden="true"><use href="../shared/icons.svg#i-external" /></svg>
+      </button>
+    </footer>
+  </body>
+</html>

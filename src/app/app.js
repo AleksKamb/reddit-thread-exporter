@@ -6,23 +6,28 @@
  * `textContent`, never parsed as HTML.
  */
 
+import { isAppCommand } from '../lib/app-tab.js';
 import { ExportRunner } from '../lib/export-runner.js';
 import { EXPORT_FORMATS, toCsv, toFileStem, toJson, toMarkdown, toRawJson } from '../lib/formatters.js';
-import { extractThreadLinks, parseThreadLink, slugToTitle } from '../lib/reddit-links.js';
+import { cleanTabTitle, extractThreadLinks, parseThreadLink, slugToTitle } from '../lib/reddit-links.js';
 import { RedditTab } from '../lib/reddit-tab.js';
 import {
   addToQueue,
   getQueue,
   getSettings,
   getThreadData,
+  IDLE_RUN_STATUS,
   onQueueChanged,
+  onSettingsChanged,
   removeFromQueue,
   resetInterruptedItems,
   saveSettings,
   saveThreadData,
+  setRunStatus,
   updateQueueItem,
 } from '../lib/store.js';
 import { normalizeThread } from '../lib/thread-model.js';
+import { applyTheme, createIcon, fillAvatar, plural, setIcon } from '../shared/ui.js';
 
 /** @typedef {import('../lib/store.js').QueueItem} QueueItem */
 /** @typedef {import('../lib/store.js').Settings} Settings */
@@ -34,6 +39,8 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const MAX_LOG_ENTRIES = 300;
 const THEMES = /** @type {const} */ (['system', 'light', 'dark']);
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
+/** Reddit sites the extension has access to (see host_permissions in manifest.json). */
+const REDDIT_TAB_PATTERNS = ['https://www.reddit.com/*', 'https://old.reddit.com/*', 'https://new.reddit.com/*'];
 
 /** Shorthand for `document.getElementById` that fails loudly on typos. */
 const $ = (/** @type {string} */ id) => {
@@ -68,6 +75,7 @@ const ui = {
   runActive: $('run-active'),
   runState: $('run-state'),
   runCount: $('run-count'),
+  runPercent: $('run-percent'),
   progress: $('progress'),
   progressBar: $('progress-bar'),
   runCurrent: $('run-current'),
@@ -110,6 +118,8 @@ const state = {
   lastResult: null,
   /** @type {number | undefined} */
   waitTimer: undefined,
+  /** Last run status sent to the popup, to avoid redundant writes. */
+  publishedStatus: '',
 };
 
 /* ==========================================================================
@@ -128,9 +138,10 @@ async function init() {
   });
 
   await resetInterruptedItems();
+  await setRunStatus(IDLE_RUN_STATUS);
   [state.settings, state.queue] = await Promise.all([getSettings(), getQueue()]);
 
-  applyTheme(state.settings.theme);
+  renderTheme(state.settings.theme);
   renderFormatOptions();
   renderSettings();
   renderQueue();
@@ -145,6 +156,31 @@ async function init() {
     renderQueue();
     renderRunPanel();
   });
+  // The toolbar popup edits the same settings; keep this page in sync.
+  onSettingsChanged((settings) => {
+    state.settings = settings;
+    renderTheme(settings.theme);
+    renderSettings();
+    renderRunPanel();
+  });
+  // Commands from the toolbar popup when this tab is already open.
+  chrome.runtime.onMessage.addListener((message, sender) => {
+    if (isAppCommand(message, sender)) runCommand(message);
+  });
+
+  // Commands from the popup when it had to open this tab.
+  if (params.has('start') || params.has('help')) {
+    history.replaceState(null, '', location.pathname + (params.has('welcome') ? '?welcome=1' : ''));
+    runCommand({ start: params.has('start'), help: params.has('help') });
+  }
+}
+
+/**
+ * @param {{ start?: boolean, help?: boolean }} command
+ */
+function runCommand({ start, help }) {
+  if (help) openHelp();
+  else if (start && !isRunning()) startExport();
 }
 
 function bindEvents() {
@@ -335,7 +371,7 @@ function bindTabs() {
 
 /** Lists Reddit threads open in any window, so they can be added with a tick. */
 async function loadOpenTabs() {
-  const tabs = await chrome.tabs.query({ url: ['https://*.reddit.com/*', 'https://redd.it/*'] });
+  const tabs = await chrome.tabs.query({ url: REDDIT_TAB_PATTERNS });
   const queued = new Set(state.queue.map((item) => item.key));
   const threads = [];
   const seen = new Set();
@@ -357,6 +393,7 @@ async function loadOpenTabs() {
       checkbox.checked = !isQueued;
       checkbox.disabled = isQueued;
       const text = document.createElement('span');
+      text.className = 'ct-text';
       const titleEl = document.createElement('span');
       titleEl.className = 'ct-title';
       titleEl.textContent = title;
@@ -391,11 +428,6 @@ async function addSelectedTabs() {
   await loadOpenTabs();
 }
 
-/** Removes the " : r/sub" and " - Reddit" suffixes Reddit puts in page titles. */
-function cleanTabTitle(title = '') {
-  return title.replace(/\s*[:|-]\s*r\/\w+\s*$/i, '').replace(/\s*[-|:]\s*Reddit\s*$/i, '').trim();
-}
-
 /* ==========================================================================
    Queue
    ========================================================================== */
@@ -421,11 +453,19 @@ function renderQueue() {
   // Reuse existing rows so focus and hover survive re-renders.
   const existing = new Map([...ui.queueList.children].map((li) => [/** @type {HTMLElement} */ (li).dataset.key, li]));
   const rows = queue.map((item) => {
-    const row = existing.get(item.key) ?? /** @type {HTMLLIElement} */ (ui.queueItemTemplate.content.firstElementChild?.cloneNode(true));
+    let row = existing.get(item.key);
+    if (!row) {
+      // Only rows that are new to the list animate in; re-rendered rows stay put.
+      row = /** @type {HTMLLIElement} */ (ui.queueItemTemplate.content.firstElementChild?.cloneNode(true));
+      row.classList.add('is-new');
+      row.addEventListener('animationend', () => row?.classList.remove('is-new'), { once: true });
+    }
     fillQueueRow(/** @type {HTMLLIElement} */ (row), item);
     return row;
   });
-  ui.queueList.replaceChildren(...rows);
+  // Moving nodes restarts their CSS animations, so only touch the DOM when the order changed.
+  const sameOrder = rows.length === ui.queueList.children.length && rows.every((row, index) => ui.queueList.children[index] === row);
+  if (!sameOrder) ui.queueList.replaceChildren(...rows);
 }
 
 /**
@@ -443,11 +483,28 @@ function fillQueueRow(row, item) {
   link.title = 'Open on Reddit (new tab)';
 
   /** @type {HTMLElement} */ (row.querySelector('.qi-sub')).textContent = item.subreddit ? `r/${item.subreddit}` : '';
-  /** @type {HTMLElement} */ (row.querySelector('.qi-status')).textContent = describeItemStatus(item);
   /** @type {HTMLElement} */ (row.querySelector('.qi-error')).textContent = item.status === 'failed' ? item.error ?? '' : '';
 
-  const icon = { queued: '#i-clock', running: '#i-loader', done: '#i-check', failed: '#i-alert' }[item.status];
-  row.querySelector('.status-dot use')?.setAttribute('href', icon);
+  const badge = /** @type {HTMLElement} */ (row.querySelector('.qi-status'));
+  badge.textContent = describeItemStatus(item);
+  badge.dataset.tone = { queued: '', running: 'accent', done: 'success', failed: 'danger' }[item.status];
+
+  // Subreddit initial, or an icon while exporting, after a failure, or before the subreddit is known.
+  const statusIcon = { queued: undefined, running: 'i-loader', done: undefined, failed: 'i-alert' }[item.status];
+  fillAvatar(/** @type {HTMLElement} */ (row.querySelector('.avatar')), {
+    subreddit: item.subreddit,
+    icon: statusIcon ?? (item.subreddit ? undefined : 'i-link'),
+  });
+
+  // The comment count, shown large on the right like a score.
+  const metric = /** @type {HTMLElement} */ (row.querySelector('.qi-metric'));
+  if (item.status === 'done' && item.comments) {
+    const unit = document.createElement('small');
+    unit.textContent = item.comments.exported === 1 ? 'comment' : 'comments';
+    metric.replaceChildren(document.createTextNode(item.comments.exported.toLocaleString()), unit);
+  } else {
+    metric.replaceChildren();
+  }
 
   const remove = /** @type {HTMLButtonElement} */ (row.querySelector('.qi-remove'));
   remove.setAttribute('aria-label', `Remove "${title}" from the queue`);
@@ -463,7 +520,7 @@ function describeItemStatus(item) {
       return 'Failed';
     case 'done': {
       const { exported = 0, reported = 0 } = item.comments ?? {};
-      return exported < reported ? `Exported · ${exported.toLocaleString()} of ${plural(reported, 'comment')}` : `Exported · ${plural(exported, 'comment')}`;
+      return exported < reported ? `Exported · ${exported.toLocaleString()} of ${reported.toLocaleString()}` : 'Exported';
     }
     default:
       return 'Waiting';
@@ -492,12 +549,21 @@ function renderFormatOptions() {
     ...EXPORT_FORMATS.map((format) => {
       const label = document.createElement('label');
       label.className = 'format';
+      label.title = format.description;
+
       const input = document.createElement('input');
       input.type = 'checkbox';
       input.name = 'format';
       input.value = format.id;
-      const text = document.createElement('span');
-      text.className = 'format-text';
+
+      const icon = document.createElement('span');
+      icon.className = 'format-icon';
+      icon.append(createIcon(format.icon));
+
+      const check = document.createElement('span');
+      check.className = 'format-check';
+      check.append(createIcon('i-check'));
+
       const name = document.createElement('span');
       name.className = 'format-name';
       name.textContent = format.label;
@@ -505,11 +571,12 @@ function renderFormatOptions() {
       ext.className = 'format-ext';
       ext.textContent = `.${format.extension}`;
       name.append(ext);
-      const description = document.createElement('span');
-      description.className = 'format-desc';
-      description.textContent = format.description;
-      text.append(name, description);
-      label.append(input, text);
+
+      const tagline = document.createElement('span');
+      tagline.className = 'format-desc';
+      tagline.textContent = format.tagline;
+
+      label.append(input, icon, check, name, tagline);
       return label;
     }),
   );
@@ -528,7 +595,7 @@ function renderSettings() {
   ui.optFileName.value = settings.fileName;
   ui.optFileName.placeholder = toFileStem('');
 
-  const sortLabel = ui.optSort.selectedOptions[0]?.textContent?.replace(/ \(.*\)$/, '') ?? '';
+  const sortLabel = ui.optSort.selectedOptions[0]?.textContent ?? '';
   ui.optionsSummary.textContent = [sortLabel, `${settings.delaySeconds} s`, settings.expandMore ? 'all replies' : '', settings.includeUsernames ? 'usernames' : '']
     .filter(Boolean)
     .join(' · ');
@@ -697,21 +764,25 @@ function renderRunPanel() {
     const percent = total ? Math.round((finished / total) * 100) : 0;
     ui.runActive.dataset.state = state.runner.state;
     ui.runState.textContent = stopping ? 'Stopping…' : paused ? 'Paused' : 'Exporting';
-    ui.runCount.textContent = `${finished} / ${total}`;
+    ui.runCount.textContent = `${finished} of ${plural(total, 'thread')}`;
+    ui.runPercent.textContent = `${percent}%`;
     ui.progress.setAttribute('aria-valuenow', String(percent));
     ui.progressBar.style.width = `${percent}%`;
     ui.runCurrent.textContent = paused ? 'Paused. Press Resume to continue.' : currentTitle ? `Now: ${currentTitle}` : 'Connecting to Reddit…';
     ui.pauseLabel.textContent = paused ? 'Resume' : 'Pause';
-    ui.pause.querySelector('use')?.setAttribute('href', paused ? '#i-play' : '#i-pause');
+    setIcon(ui.pause, paused ? 'i-play' : 'i-pause');
     /** @type {HTMLButtonElement} */ (ui.pause).disabled = stopping;
     /** @type {HTMLButtonElement} */ (ui.stop).disabled = stopping;
   }
+  publishRunStatus();
 
   // Result of the last run
   const result = state.lastResult;
   ui.result.hidden = !result || running;
   if (result) {
-    ui.result.dataset.tone = result.failed || result.stopped ? 'warning' : 'success';
+    const tone = result.failed || result.stopped ? 'warning' : 'success';
+    ui.result.dataset.tone = tone;
+    setIcon(ui.result.querySelector('.result-icon'), tone === 'success' ? 'i-check' : 'i-alert');
     ui.resultTitle.textContent = result.stopped
       ? `Stopped after ${plural(result.done, 'thread')}`
       : result.failed
@@ -740,6 +811,23 @@ function renderRunPanel() {
         : `${selectedFormats()
             .map((format) => `.${format.extension}`)
             .join(', ')} · saved to Downloads/${DOWNLOAD_FOLDER}`;
+}
+
+/** Shares the export's progress with the toolbar popup. */
+function publishRunStatus() {
+  const runnerState = state.runner?.state;
+  const status = isRunning()
+    ? {
+        state: runnerState === 'paused' || runnerState === 'stopping' ? runnerState : 'running',
+        finished: state.run.finished,
+        total: state.run.total,
+        current: state.run.currentTitle,
+      }
+    : IDLE_RUN_STATUS;
+  const serialized = JSON.stringify(status);
+  if (serialized === state.publishedStatus) return;
+  state.publishedStatus = serialized;
+  setRunStatus(status).catch(() => {});
 }
 
 /** Shows a live countdown while the runner waits for Reddit (rate limits and retries). */
@@ -854,10 +942,10 @@ async function copyMarkdown() {
     const markdown = toMarkdown(data.threads, { exportedAt: new Date(), toolName: TOOL_NAME, toolVersion: TOOL_VERSION });
     await navigator.clipboard.writeText(markdown);
     ui.copyLabel.textContent = `Copied ${plural(data.threads.length, 'thread')}`;
-    ui.copyMarkdown.querySelector('use')?.setAttribute('href', '#i-check');
+    setIcon(ui.copyMarkdown, 'i-check');
     setTimeout(() => {
       ui.copyLabel.textContent = 'Copy as Markdown';
-      ui.copyMarkdown.querySelector('use')?.setAttribute('href', '#i-copy');
+      setIcon(ui.copyMarkdown, 'i-copy');
     }, 2000);
   } catch (error) {
     showNotice('error', 'Could not copy to the clipboard.', [String(error?.message ?? error)]);
@@ -877,13 +965,7 @@ async function copyMarkdown() {
  * @param {string[]} [details]
  */
 function showNotice(tone, title, details = []) {
-  const icon = { success: '#i-check', warning: '#i-alert', error: '#i-alert' }[tone];
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.classList.add('icon');
-  svg.setAttribute('aria-hidden', 'true');
-  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-  use.setAttribute('href', icon);
-  svg.append(use);
+  const svg = createIcon(tone === 'success' ? 'i-check' : 'i-alert');
 
   const body = document.createElement('div');
   body.className = 'notice-body';
@@ -904,9 +986,9 @@ function showNotice(tone, title, details = []) {
 
   const close = document.createElement('button');
   close.type = 'button';
-  close.className = 'btn btn-ghost btn-icon btn-sm';
+  close.className = 'icon-btn icon-btn-sm icon-btn-plain';
   close.setAttribute('aria-label', 'Dismiss message');
-  close.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>';
+  close.append(createIcon('i-x'));
   close.addEventListener('click', () => {
     ui.addResult.hidden = true;
   });
@@ -992,20 +1074,23 @@ async function dismissWelcome() {
 
 async function cycleTheme() {
   const next = THEMES[(THEMES.indexOf(state.settings.theme) + 1) % THEMES.length];
-  applyTheme(next);
+  renderTheme(next);
   await updateSettings({ theme: next });
 }
 
-/** @param {Settings['theme']} theme */
-function applyTheme(theme) {
-  if (theme === 'system') delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = theme;
+/**
+ * Applies the theme and updates the toggle's icon and label.
+ *
+ * @param {Settings['theme']} theme
+ */
+function renderTheme(theme) {
+  applyTheme(theme);
 
   const labels = { system: 'Theme: match system', light: 'Theme: light', dark: 'Theme: dark' };
-  const icons = { system: '#i-monitor', light: '#i-sun', dark: '#i-moon' };
+  const icons = { system: 'i-monitor', light: 'i-sun', dark: 'i-moon' };
   ui.themeToggle.setAttribute('aria-label', `${labels[theme]}. Click to change.`);
   ui.themeToggle.title = labels[theme];
-  ui.themeToggle.querySelector('use')?.setAttribute('href', icons[theme]);
+  setIcon(ui.themeToggle, icons[theme]);
 }
 
 /* ==========================================================================
@@ -1033,12 +1118,4 @@ function estimateDuration(threadCount) {
 /** @param {number} seconds */
 function formatSeconds(seconds) {
   return seconds >= 60 ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} min` : `${seconds} s`;
-}
-
-/**
- * @param {number} count
- * @param {string} noun Singular form.
- */
-function plural(count, noun) {
-  return `${count.toLocaleString()} ${noun}${count === 1 ? '' : 's'}`;
 }

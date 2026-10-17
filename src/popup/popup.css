@@ -1,0 +1,324 @@
+/* ==========================================================================
+   Toolbar popup. Shares tokens and components with the exporter page
+   (../shared/theme.css). Chrome sizes the popup to its content, up to 800×600.
+   ========================================================================== */
+
+body {
+  width: 372px;
+  max-height: 600px;
+  overflow-y: auto;
+  background:
+    radial-gradient(420px 220px at 0% -10%, var(--bg-glow-1), transparent 65%),
+    radial-gradient(360px 200px at 100% 0%, var(--bg-glow-2), transparent 60%),
+    var(--bg);
+  font-size: 14px;
+}
+
+.pop-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 10px;
+}
+
+.pop-head img {
+  border-radius: 9px;
+  box-shadow: 0 6px 14px -6px rgb(255 69 0 / 0.6);
+}
+
+.pop-brand {
+  flex: 1;
+  display: grid;
+  line-height: 1.15;
+}
+
+.pop-name {
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  font-size: 15px;
+}
+
+.pop-sub {
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+.pop-head .icon-btn {
+  box-shadow: var(--shadow-pill);
+}
+
+.pop-main {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+/* ---- Hero panel: this page, progress, counts ---------------------------- */
+
+.pop-hero {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.current {
+  padding: 8px 8px 8px 8px;
+}
+
+.current .avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+
+.current-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+
+.current-label {
+  font-size: 11.5px;
+  color: var(--text-subtle);
+  font-weight: 500;
+}
+
+.current-title {
+  font-weight: 560;
+  font-size: 13.5px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current .btn {
+  flex: none;
+  padding: 0 12px 0 10px;
+}
+
+.pop-run {
+  padding: 10px 14px 10px 10px;
+}
+
+.orb-mini {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  box-shadow: 0 0 0 3px var(--ring), 0 8px 18px -6px rgb(255 69 0 / 0.7);
+}
+
+.orb-mini .icon {
+  width: 15px;
+  height: 15px;
+  animation: bob 1.6s ease-in-out infinite;
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+.pop-run-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.pop-run-title {
+  font-weight: 560;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  padding: 7px 6px 6px;
+  border-radius: var(--radius);
+  background: var(--pill);
+  border: 1px solid var(--pill-border);
+  box-shadow: var(--shadow-pill);
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 11.5px;
+  color: var(--text-subtle);
+  font-weight: 500;
+}
+
+.stat[data-tone="danger"] .stat-value {
+  color: var(--danger);
+}
+
+.stat[data-tone="success"] .stat-value {
+  color: var(--success);
+}
+
+/* ---- Quick add ---------------------------------------------------------- */
+
+.quick-add {
+  align-items: center;
+  padding: 6px 6px 6px 16px;
+  border-radius: 999px;
+}
+
+.quick-add input {
+  font-size: 13.5px;
+}
+
+.add-status {
+  min-height: 0;
+  padding: 0 8px;
+  margin-top: -4px;
+}
+
+.add-status:empty {
+  display: none;
+}
+
+.add-status[data-tone="success"] {
+  color: var(--success);
+}
+
+.add-status[data-tone="error"] {
+  color: var(--danger);
+}
+
+/* ---- Quick settings ----------------------------------------------------- */
+
+.quick-settings {
+  display: grid;
+  gap: 11px;
+  padding: 12px 14px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.section-title .icon {
+  color: var(--reddit);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chips {
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+
+.chips .chip {
+  flex: 1 1 auto;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px 0 6px;
+  font-size: 12px;
+}
+
+.switch-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.field {
+  display: grid;
+  min-width: 0;
+}
+
+.field .label {
+  font-size: 12.5px;
+  margin-bottom: 4px;
+}
+
+.field .input {
+  min-height: 36px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 13px;
+}
+
+.quick-settings .switch-text {
+  font-size: 13.5px;
+}
+
+/* ---- Footer ------------------------------------------------------------- */
+
+.pop-foot {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px 8px;
+}
+
+.pop-foot .btn-lg {
+  min-height: 48px;
+}
+
+.pop-foot .hint:empty {
+  display: none;
+}
+
+.link-btn {
+  appearance: none;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-text);
+  font: 560 13.5px/1.2 var(--font-sans);
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  background: var(--accent-soft);
+}
+
+.link-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
